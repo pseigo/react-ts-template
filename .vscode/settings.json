@@ -1,0 +1,5 @@
+{
+    "jest.jestCommandLine": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "jest.useJest30": true,
+    "jest.rootPath": "."
+}

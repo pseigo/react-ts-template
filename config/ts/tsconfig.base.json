@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/unnamed_project/*": ["../../src/unnamed_project/*"],
+      "@/test/*": ["../../test/*"],
+      "@/*": ["../../*"]
+    },
+
+    "target": "es2020",
+    "module": "es2020",
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+
+    "listEmittedFiles": false,
+
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "noImplicitAny": false
+  },
+
+  "watchOptions": {
+    "watchFile": "useFsEventsOnParentDirectory",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "excludeDirectories": [
+      "../../**/node_modules",
+      "../../dist",
+      "../../build-dev",
+      "../../docs"
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "references": [
+    { "path": "./config/ts/targets/tsconfig.scripts.json" },
+    { "path": "./config/ts/targets/tsconfig.app.json" },
+    { "path": "./config/ts/targets/tsconfig.app_workers.json" },
+    { "path": "./config/ts/targets/tsconfig.test.json" }
+  ],
+
+  "include": [],
+  "files": [],
+  "types": [],
+
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    "target": "es2020",
+    "module": "es2020"
+  }
+}

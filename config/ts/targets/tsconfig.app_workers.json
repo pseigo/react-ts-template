@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.base",
+
+  "references": [{ "path": "./tsconfig.app.json" }],
+
+  "include": ["../../../src/unnamed_project/workers/**/*"],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "lib": ["esnext", "webworker"],
+    "types": [],
+
+    "rootDir": "../../../src",
+    "outDir": "../../../build-dev/app-workers",
+    "declarationDir": "../../../build-dev/app-workers",
+
+    "declaration": true,
+    "emitDeclarationOnly": true
+  }
+}

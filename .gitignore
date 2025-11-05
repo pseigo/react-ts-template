@@ -1,0 +1,8 @@
+# Generated files
+node_modules
+/build-dev
+tags
+/dist
+/dist.zip
+/src/unnamed_project/common/config/tailwind/compiled_theme.json
+/src/unnamed_project/gen/**/*

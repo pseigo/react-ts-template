@@ -1,0 +1,27 @@
+{
+  "extends": "../tsconfig.base",
+
+  "include": [
+    "../../../src/**/*",
+    "../../../src/**/*.ts",
+    "../../../src/**/*.tsx",
+    "../../../src/**/*.js",
+    "../../../src/**/*.jsx",
+    "../../../src/**/*.json"
+  ],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "lib": ["esnext", "dom"],
+    "types": ["react", "react-dom"],
+    "jsx": "react-jsx",
+
+    "rootDir": "../../../src",
+    "outDir": "../../../build-dev/app",
+    "declarationDir": "../../../build-dev/app",
+
+    "declaration": true,
+    "declarationMap": true
+  }
+}

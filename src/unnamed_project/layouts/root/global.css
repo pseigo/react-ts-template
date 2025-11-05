@@ -1,0 +1,8 @@
+@import "../../common/styles/safe_area_insets";
+@import "../../common/styles/material_symbols";
+
+@config "../../../../config/tailwind.config.cjs";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

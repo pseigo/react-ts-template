@@ -14,7 +14,7 @@ To rename the project:
 > files and directories, and replacing file contents. i.e.,
 >
 >       "unnamed_project" => "your_project_name",
->       "UnnamedProject => YourProjectName",
+>       "UnnamedProject" => "YourProjectName",
 >       etc.
 >
 > It is recommended to start with a **clean work tree** in git to ease code

@@ -6,8 +6,8 @@ A template for client-side React/TypeScript web projects.
 
 To rename the project:
 
-- Run `npm install` to install dependencies.
-- Run `npm run build-dev` to compile helper scripts.
+1. Run `npm install` to install dependencies.
+2. Run `npm run build-dev` to compile helper scripts.
 
 > [!WARNING]
 > The next step will modify many files within the project including renaming
@@ -22,16 +22,16 @@ To rename the project:
 > uncommitted changes so `git status` is clean _before_ running
 > `rename-project.js`.
 
-- Run `node ./build-dev/scripts/rename-project.js your-project-name YourProjectName`.
-- Review and commit the changes.
-- Now you may delete `./scripts/rename-project.ts`. If you keep it around, note that it only tries to replace names according to the project template's original file structure. 
+3. Run `node ./build-dev/scripts/rename-project.js your-project-name YourProjectName`.
+4. Review and commit the changes.
+5. Now you may delete `./scripts/rename-project.ts`. If you keep it around, note that it only tries to replace names according to the project template's original file structure.
 
 ## Development server
 
 To start the development server:
 
-- Run `npm install` to install dependencies.
-- Start the build watchers and local server with `npm run server-dev`.
+1. Run `npm install` to install dependencies.
+2. Start the build watchers and local server with `npm run server-dev`.
 
 Now you can visit [`localhost:7878`](http://localhost:7878) from your browser.
 
@@ -42,7 +42,7 @@ under the _MIT-0_ ("MIT No Attribution") license. Please see the `LICENSE` file.
 
 Otherwise, files containing (usually near the start of the file) a license
 comment or "SPDX-License-Identifier" are distributed under that license and
-MUST retain the respective copyright attribution.
+MUST retain the respective copyright attribution and license notice.
 
 In other words, most of the code in this template does _not_ require
 attribution. You are free to make this template your own in accordance with

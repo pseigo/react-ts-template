@@ -13,7 +13,7 @@ To rename the project:
 > The next step will modify many files within the project including renaming
 > files and directories, and replacing file contents. i.e.,
 >
->       "unnamed-project" => "your-project-name",
+>       "unnamed_project" => "your_project_name",
 >       "UnnamedProject => YourProjectName",
 >       etc.
 >
@@ -22,7 +22,7 @@ To rename the project:
 > uncommitted changes so `git status` is clean _before_ running
 > `rename-project.js`.
 
-3. Run `node ./build-dev/scripts/rename-project.js your-project-name YourProjectName`.
+3. Run `node ./build-dev/scripts/rename-project.js your_project_name YourProjectName`.
 4. Review and commit the changes.
 5. Now you may delete `./scripts/rename-project.ts`. If you keep it around, note that it only tries to replace names according to the project template's original file structure.
 

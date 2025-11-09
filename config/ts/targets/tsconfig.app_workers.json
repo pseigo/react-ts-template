@@ -13,9 +13,6 @@
 
     "rootDir": "../../../src",
     "outDir": "../../../build-dev/app-workers",
-    "declarationDir": "../../../build-dev/app-workers",
-
-    "declaration": true,
-    "emitDeclarationOnly": true
+    "declarationDir": "../../../build-dev/app-workers"
   }
 }

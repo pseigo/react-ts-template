@@ -19,9 +19,6 @@
 
     "rootDir": "../../../src",
     "outDir": "../../../build-dev/app",
-    "declarationDir": "../../../build-dev/app",
-
-    "declaration": true,
-    "declarationMap": true
+    "declarationDir": "../../../build-dev/app"
   }
 }

@@ -6,6 +6,10 @@
       "@/*": ["../../*"]
     },
 
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+
     "target": "es2020",
     "module": "es2020",
     "allowJs": true,

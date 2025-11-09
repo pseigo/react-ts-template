@@ -14,9 +14,6 @@
 
     "rootDir": "../../../test",
     "outDir": "../../../build-dev/test",
-    "declarationDir": "../../../build-dev/test",
-
-    "declaration": true,
-    "emitDeclarationOnly": true
+    "declarationDir": "../../../build-dev/test"
   }
 }

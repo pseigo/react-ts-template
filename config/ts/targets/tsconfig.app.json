@@ -9,6 +9,7 @@
     "../../../src/**/*.jsx",
     "../../../src/**/*.json"
   ],
+  "exclude": ["../../../src/unnamed_project/workers"],
 
   "compilerOptions": {
     "composite": true,

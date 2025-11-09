@@ -1,6 +1,5 @@
 const { readFileSync } = require("node:fs");
 
-console.log(`__dirname="${__dirname}"`);
 const k_swcrcFilePath = `${__dirname}/.swcrc`;
 const k_swcOpts = JSON.parse(readFileSync(k_swcrcFilePath, { encoding: "utf-8" }));
 

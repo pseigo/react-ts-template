@@ -1,9 +1,9 @@
 {
   "references": [
     { "path": "./config/ts/targets/tsconfig.scripts.json" },
-    { "path": "./config/ts/targets/tsconfig.app.json" },
+    { "path": "./config/ts/targets/tsconfig.test.json" },
     { "path": "./config/ts/targets/tsconfig.app_workers.json" },
-    { "path": "./config/ts/targets/tsconfig.test.json" }
+    { "path": "./config/ts/targets/tsconfig.app.json" }
   ],
 
   "include": [],

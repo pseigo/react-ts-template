@@ -31,7 +31,7 @@ To rename the project:
 To start the development server:
 
 1. Run `npm install` to install dependencies.
-2. Start the build watchers and local server with `npm run server-dev`.
+2. Start the build watchers and local server with `npm run dev-server`.
 
 Now you can visit [`localhost:7878`](http://localhost:7878) from your browser.
 

@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import WebSocket, { WebSocketServer } from "ws";
 
-import { k_paths } from "./common/paths.js";
+import { k_paths } from "@/scripts/common/paths";
 
 const k_host = "127.0.0.1"; // private to this machine
 //const k_host = "0.0.0.0"; // open to local network

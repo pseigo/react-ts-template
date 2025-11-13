@@ -2,8 +2,8 @@ import * as esbuild from "esbuild";
 import FS from "node:fs";
 import { basename } from "node:path";
 
-import { Logger } from "./common/logging";
-import { k_paths } from "./common/paths";
+import { Logger } from "@/scripts/common/logging";
+import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
 import { buildHtml } from "./common/build/html";

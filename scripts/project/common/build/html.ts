@@ -1,8 +1,9 @@
 import * as FS from "node:fs";
-import { k_paths } from "../paths";
+
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+import { k_paths } from "@/scripts/common/paths";
 
 import type { BuildContext } from "./context";
-import { assertCwdIsPackageRootDir } from "../packages";
 
 /**
  * Deploys an HTML source file referenced in the given `ctx`.

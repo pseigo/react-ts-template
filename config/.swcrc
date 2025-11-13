@@ -4,6 +4,7 @@
     "paths": {
       "@/unnamed_project/*": ["./src/unnamed_project/*"],
       "@/test/*": ["./test/*"],
+      "@/scripts/*": ["./scripts/*"],
       "@/*": ["./*"]
     },
     "baseUrl": ".",

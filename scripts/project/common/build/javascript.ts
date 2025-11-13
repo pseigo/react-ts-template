@@ -1,7 +1,8 @@
 import * as esbuild from "esbuild";
 
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+
 import { k_buildContextOptions } from "../esbuild.js";
-import { assertCwdIsPackageRootDir } from "../packages";
 
 /**
  * Builds JavaScript entrypoints with ESBuild based on the `BuildOptions`

@@ -4,8 +4,8 @@ import resolveTailwindConfig from "tailwindcss/resolveConfig";
 import {
   assertCwdIsPackageRootDir,
   findEnclosingPackageDir,
-} from "../packages";
-import { k_paths } from "../paths";
+} from "@/scripts/common/packages";
+import { k_paths } from "@/scripts/common/paths";
 
 import type { BuildContext } from "./context";
 

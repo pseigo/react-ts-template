@@ -7,8 +7,8 @@ import postcssLoadConfig, {
   type ConfigContext as PostCssLoadConfigContext,
 } from "postcss-load-config";
 
-import { assertCwdIsPackageRootDir } from "../packages";
-import { k_paths } from "../paths";
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+import { k_paths } from "@/scripts/common/paths";
 
 import type { BuildContext } from "./context";
 

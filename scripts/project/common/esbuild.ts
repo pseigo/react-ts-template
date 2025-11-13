@@ -1,6 +1,6 @@
 import type { BuildOptions } from "esbuild";
 
-import { k_paths } from "./paths.js";
+import { k_paths } from "@/scripts/common/paths";
 
 const entryPoints: string[] = [
   `${k_paths.srcDir}/app.tsx`,

@@ -4,14 +4,14 @@ import { basename } from "node:path";
 import * as ChildProcess from "node:child_process";
 import { type FSWatcher } from "node:fs";
 
-import { k_buildContextOptions } from "./common/esbuild";
-import { Logger } from "./common/logging";
-import { k_paths } from "./common/paths";
+import { Logger } from "@/scripts/common/logging";
+import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
 import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
+import { k_buildContextOptions } from "./common/esbuild";
 
 const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
 

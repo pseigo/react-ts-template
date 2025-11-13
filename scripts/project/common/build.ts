@@ -1,4 +1,4 @@
-import { k_paths } from "./paths";
+import { k_paths } from "@/scripts/common/paths";
 
 import { BuildContext } from "./build/context";
 import { buildCss } from "./build/css";

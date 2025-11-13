@@ -24,6 +24,7 @@ const config = {
   moduleNameMapper: {
     "^@/unnamed_project/(.*)$": "<rootDir>/src/unnamed_project/$1",
     "^@/test/(.*)$": "<rootDir>/test/$1",
+    "^@/scripts/(.*)$": "<rootDir>/scripts/$1",
   },
   transform: {
     "^.+\\.[jt]sx?$": ["@swc/jest", k_swcOpts],

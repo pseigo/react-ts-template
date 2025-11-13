@@ -17,7 +17,7 @@ const k_globalCssArtifactFilePath = `${k_paths.distDir}/global.css`;
 const k_appName = "unnamed_project";
 const logger = new Logger({
   app: k_appName,
-  program: basename(__filename, ".cjs"),
+  file: basename(__filename, ".cjs"),
 });
 
 async function initDistDir() {

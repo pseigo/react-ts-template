@@ -1,14 +1,32 @@
+import Chalk, { type ChalkInstance } from "chalk";
 import { isString } from "tanaris/strings";
 
 export enum LogLevel {
   NONE,
   ERROR,
   WARNING,
+  NOTICE, // not as severe as WARNING, but more important than INFO.
   INFO,
   DEBUG,
 }
-
 export type LogLevelName = keyof typeof LogLevel;
+
+const logLevelNameStyle: Record<LogLevel, ChalkInstance> = {
+  [LogLevel.NONE]: Chalk.grey,
+  [LogLevel.ERROR]: Chalk.red,
+  [LogLevel.WARNING]: Chalk.yellow,
+  [LogLevel.NOTICE]: Chalk.magenta,
+  [LogLevel.INFO]: Chalk.grey,
+  [LogLevel.DEBUG]: Chalk.cyan,
+};
+const logLevelMessageStyle: Record<LogLevel, ChalkInstance> = {
+  [LogLevel.NONE]: logLevelNameStyle[LogLevel.NONE],
+  [LogLevel.ERROR]: logLevelNameStyle[LogLevel.ERROR].bold,
+  [LogLevel.WARNING]: logLevelNameStyle[LogLevel.WARNING].bold,
+  [LogLevel.NOTICE]: logLevelNameStyle[LogLevel.NOTICE],
+  [LogLevel.INFO]: Chalk.black,
+  [LogLevel.DEBUG]: logLevelNameStyle[LogLevel.DEBUG],
+};
 
 export interface LoggerOpts {
   /**
@@ -27,7 +45,10 @@ export interface LoggerOpts {
   /** Name of the application. */
   app?: string;
 
-  /** Name of a sub-program within the application. */
+  /** A namespace within the application. e.g., "project" for project scripts. */
+  namespace?: string;
+
+  /** Name of a sub-program within the app or namespace. */
   program?: string;
 
   /**
@@ -40,22 +61,19 @@ export interface LoggerOpts {
 }
 
 export class Logger {
-  #logLevel: LogLevel;
-  #appName: string | null;
-  #programName: string | null;
-  #associatedFile: string | null;
+  #opts: LoggerOpts;
+  #logLevel: LogLevel; // to avoid null-checking on `LoggerOpts.level?`
   #logPrefix: string;
 
   constructor(opts: LoggerOpts) {
+    this.#opts = opts;
     this.#logLevel = opts.level ?? LogLevel.INFO;
-    this.#appName = opts.app ?? null;
-    this.#programName = opts.program ?? null;
-    this.#associatedFile = opts.file ?? null;
     this.#logPrefix = createLogPrefix(opts);
   }
 
   setLevel(level: LogLevel) {
     this.#logLevel = level;
+    this.#opts.level = level; // just in case
   }
 
   error(...args) {
@@ -88,6 +106,22 @@ export class Logger {
       ...args
     );
     console.warn(msg, ...rest);
+  }
+
+  notice(...args) {
+    if (this.#logLevel < LogLevel.NOTICE) {
+      return;
+    }
+    if (args.length === 0) {
+      console.info();
+      return;
+    }
+    const [msg, rest] = buildLogMessage(
+      this.#logPrefix,
+      LogLevel.NOTICE,
+      ...args
+    );
+    console.info(msg, ...rest);
   }
 
   info(...args) {
@@ -128,37 +162,16 @@ function createLogPrefix(opts: LoggerOpts): string {
   if (opts.app != null) {
     prefix += `[${opts.app}]`;
   }
+  if (opts.namespace != null) {
+    prefix += `[${opts.namespace}]`;
+  }
   if (opts.program != null) {
     prefix += `[${opts.program}]`;
   }
   if (opts.file != null && opts.file !== "") {
-    const truncatedFile = truncateFileName(opts.file);
-    prefix += `[${truncatedFile}]`;
+    prefix += `[${opts.file}]`;
   }
   return prefix;
-}
-
-function truncateFileName(file: string): string {
-  const projectRootDirName = "react-ts-template";
-
-  // (a) Try truncating to a path relative to the project's root directory.
-  {
-    const regExp = new RegExp(`^.*${projectRootDirName}\/(.*)`);
-    const match = file.match(regExp);
-    if (match != null) {
-      return match[1]!;
-    }
-  }
-
-  // (b) Try truncating to just the filename.
-  {
-    const match = file.match(/^.*\/(.*)/);
-    if (match != null) {
-      return match[1]!;
-    }
-  }
-
-  return "";
 }
 
 function buildLogMessage(
@@ -167,12 +180,17 @@ function buildLogMessage(
   ...args
 ): [string, unknown[]] {
   const timestamp = createLogTimestamp();
-  let msg = `[${timestamp}]${prefix}[${LogLevel[level]}]`;
+
+  const timestampBlock = Chalk.grey(`[${timestamp}]`);
+  const prefixBlock = Chalk.grey(prefix);
+  const logLevelNameBlock = logLevelNameStyle[level](`[${LogLevel[level]}]`);
+
+  let msg = `${timestampBlock}${prefixBlock}${logLevelNameBlock}`;
   let rest = args;
 
   if (isString(args[0])) {
     msg += " ";
-    msg += args[0];
+    msg += logLevelMessageStyle[level](args[0]);
     rest = args.slice(1);
   }
 

@@ -18,7 +18,7 @@ const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
 const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR fetch from package.json's "name" property
 const logger = new Logger({
   app: k_appName,
-  program: basename(__filename, ".cjs"),
+  file: basename(__filename, ".cjs"),
 });
 
 type WatchTarget = "html" | "css" | "tailwind" | "ctags";

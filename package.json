@@ -102,6 +102,7 @@
     "@types/react": "19.1.13",
     "@types/react-dom": "19.1.9",
     "autoprefixer": "10.4.21",
+    "chalk": "5.6.2",
     "esbuild": "0.25.10",
     "eslint": "9.36.0",
     "eslint-plugin-jest": "29.0.1",

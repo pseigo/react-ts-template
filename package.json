@@ -36,6 +36,8 @@
     "build:files:dev": "node build-dev/scripts/project/build.js --dev",
     "build:files:app-dev": "npx tsc --build config/ts/targets/tsconfig.app.json",
     "build:files:scripts": "npx tsc --build config/ts/targets/tsconfig.scripts.json",
+    "build:dist": "npm run build:scripts && node build-dev/scripts/project/build.cjs",
+    "build:scripts": "node scripts/project/build_scripts.js",
     "clean": "node build-dev/scripts/project/clean.js",
     "clean-build": "npm run all -- clean build",
     "clean-fullbuild": "npm run all -- clean fullbuild",

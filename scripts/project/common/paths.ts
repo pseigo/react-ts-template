@@ -7,5 +7,5 @@ export const k_paths = {
   distDir: "dist",
   rootLayoutDir: "src/unnamed_project/layouts/root",
   srcDir: "src/unnamed_project",
-  srcGenDir: "src/unnamed_project/gen"
+  srcGenDir: "src/unnamed_project/gen",
 };

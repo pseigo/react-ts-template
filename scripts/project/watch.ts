@@ -1,42 +1,45 @@
 import * as esbuild from "esbuild";
-import * as FS from "node:fs";
-import resolveTailwindConfig from "tailwindcss/resolveConfig";
+import FS from "node:fs";
+import { basename } from "node:path";
 import * as ChildProcess from "node:child_process";
 import { type FSWatcher } from "node:fs";
-import postcss, {
-  type Processor as PostCssProcessor,
-  type Result as PostCssResult,
-}  from "postcss";
-import postcssLoadConfig, { type ConfigContext as PostCssLoadConfigContext } from "postcss-load-config";
 
-import { k_buildContextOptions } from "./common/esbuild.js";
-import { k_paths } from "./common/paths.js";
+import { k_buildContextOptions } from "./common/esbuild";
+import { Logger } from "./common/logging";
+import { k_paths } from "./common/paths";
+
+import { k_commonBuildTargetContexts } from "./common/build";
+import { buildHtml } from "./common/build/html";
+import { buildCss } from "./common/build/css";
+import { buildTailwindConfig } from "./common/build/tailwind";
 
 const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
-const k_globalCssSourceFilePath = `${k_paths.rootLayoutDir}/global.css`;
-const k_globalCssArtifactFilePath = `${k_paths.distDir}/global.css`;
-const k_indexHtmlSourceFilePath = `${k_paths.rootLayoutDir}/index.html`;
-const k_indexHtmlArtifactFilePath = `${k_paths.distDir}/index.html`;
-const k_logPrefix = "[unnamed_project][scripts/watch_build_html.js]";
-const k_tailwindConfigFilePath = `${k_paths.configDir}/tailwind.config.cjs`;
-const k_tailwindArtifactDirPath = `${k_paths.srcGenDir}/tailwind`;
-const k_tailwindArtifactFilePath = `${k_tailwindArtifactDirPath}/compiled_theme.json`;
-//import tailwindTheme from "@/unnamed_project/gen/tailwind/compiled_theme.json";
+
+const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR fetch from package.json's "name" property
+const logger = new Logger({
+  app: k_appName,
+  program: basename(__filename, ".cjs"),
+});
 
 type WatchTarget = "html" | "css" | "tailwind" | "ctags";
 
 interface WatchContext {
   target: WatchTarget;
-  sourceFilePath: string;
-  artifactFilePath: string;
   watcher: FSWatcher;
+  paths: {
+    /** Path to the original source code file. */
+    sourceFile: string;
+
+    /** Where to write the compiled artifact file. */
+    artifactFile: string;
+  };
 }
 
 const watchContexts: Record<WatchTarget, WatchContext | null> = {
   html: null,
   css: null,
   tailwind: null,
-  ctags: null
+  ctags: null,
 };
 
 // ~~~ Entry point ~~~
@@ -58,18 +61,19 @@ async function watchHtml() {
     watchContexts.html.watcher.close();
   }
 
-  const watcher = FS.watch(k_indexHtmlSourceFilePath, { encoding: "utf8" }, (...args) => listener("html", ...args));
+  const watcher = FS.watch(
+    k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile,
+    { encoding: "utf8" },
+    (...args) => listener("html", ...args)
+  );
   watchContexts.html = {
     target: "html",
-    sourceFilePath: k_indexHtmlSourceFilePath,
-    artifactFilePath: k_indexHtmlArtifactFilePath,
-    watcher: watcher
+    paths: k_commonBuildTargetContexts.rootLayoutHtml.paths,
+    watcher: watcher,
   };
-  console.log(`${k_logPrefix}[info] watching '${k_indexHtmlSourceFilePath}'`);
-}
-
-function rebuildHtml(ctx: WatchContext) {
-  FS.copyFileSync(ctx.sourceFilePath, ctx.artifactFilePath);
+  logger.info(
+    `watching '${k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile}'`
+  );
 }
 
 // ~~~ CSS ~~~
@@ -79,45 +83,19 @@ async function watchCss() {
     watchContexts.css.watcher.close();
   }
 
-  const watcher = FS.watch(k_globalCssSourceFilePath, { encoding: "utf8" }, (...args) => listener("css", ...args));
+  const watcher = FS.watch(
+    k_commonBuildTargetContexts.globalCss.paths.sourceFile,
+    { encoding: "utf8" },
+    (...args) => listener("css", ...args)
+  );
   watchContexts.css = {
     target: "css",
-    sourceFilePath: k_globalCssSourceFilePath,
-    artifactFilePath: k_globalCssArtifactFilePath,
-    watcher: watcher
+    paths: k_commonBuildTargetContexts.globalCss.paths,
+    watcher: watcher,
   };
-  console.log(`${k_logPrefix}[info] watching '${k_globalCssSourceFilePath}'`);
-}
-
-async function rebuildCss(ctx: WatchContext) {
-  const globalCssSource = FS.readFileSync(ctx.sourceFilePath, {
-    encoding: "utf8",
-    flag: "r",
-  });
-
-  //const postcssLoadConfigContext: PostCssLoadConfigContext = { map: "inline" };
-  const postcssLoadConfigContext: PostCssLoadConfigContext = {};
-  const postcssConfig = await postcssLoadConfig(postcssLoadConfigContext, "./config");
-
-  const postcssPlugins = postcssConfig.plugins;
-  const postcssProcessOptions = {
-    ...postcssConfig.options,
-    from: ctx.sourceFilePath,
-    to: ctx.artifactFilePath,
-  };
-
-  const postcssProcessor: PostCssProcessor = await postcss(postcssPlugins);
-
-  const globalCssArtifact: PostCssResult = await postcssProcessor.process(
-    globalCssSource,
-    postcssProcessOptions
+  logger.info(
+    `watching '${k_commonBuildTargetContexts.globalCss.paths.sourceFile}'`
   );
-
-  FS.writeFileSync(ctx.artifactFilePath, globalCssArtifact.css, {
-    encoding: "utf8",
-    flag: "w",
-    mode: 0o644,
-  });
 }
 
 // ~~~ Tailwind ~~~
@@ -127,49 +105,19 @@ async function watchTailwind() {
     watchContexts.tailwind.watcher.close();
   }
 
-  const watcher = FS.watch(k_tailwindConfigFilePath, { encoding: "utf8" }, (...args) => listener("tailwind", ...args));
+  const watcher = FS.watch(
+    k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile,
+    { encoding: "utf8" },
+    (...args) => listener("tailwind", ...args)
+  );
   watchContexts.tailwind = {
     target: "tailwind",
-    sourceFilePath: k_tailwindConfigFilePath,
-    artifactFilePath: k_tailwindArtifactFilePath,
-    watcher: watcher
+    paths: k_commonBuildTargetContexts.tailwindConfig.paths,
+    watcher: watcher,
   };
-  console.log(`${k_logPrefix}[info] watching '${k_tailwindConfigFilePath}'`);
-}
-
-async function rebuildTailwind(ctx: WatchContext) {
-  //FS.copyFileSync(ctx.sourceFilePath, ctx.artifactFilePath);
-
-  let rawConfigStr: string | null = null;
-  try {
-    rawConfigStr = FS.readFileSync(k_tailwindConfigFilePath, {
-      encoding: "utf8",
-      flag: "r",
-    });
-  } catch (error: unknown) {
-    const reason = error instanceof Error ? ` - ${error.message}` : "";
-    console.error(`${k_logPrefix}[error] failed to create Tailwind gen dir${reason}`);
-    return;
-  }
-
-  const rawConfigObj = JSON.parse(rawConfigStr);
-  const config = resolveTailwindConfig(rawConfigObj);
-  const theme = config["theme"];
-  const rawThemeStr = JSON.stringify(theme);
-
-  try {
-    FS.mkdirSync(k_tailwindArtifactDirPath);
-  } catch (error: unknown) {
-    const reason = error instanceof Error ? ` - ${error.message}` : "";
-    console.error(`${k_logPrefix}[error] failed to create Tailwind gen dir${reason}`);
-    return;
-  }
-
-  FS.writeFileSync(k_tailwindArtifactFilePath, rawThemeStr, {
-    encoding: "utf8",
-    mode: 0o644, // rw-r--r--
-    flag: "w"
-  });
+  logger.info(
+    `watching '${k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile}'`
+  );
 }
 
 // ~~~ JS ~~~
@@ -187,26 +135,31 @@ async function watchCtags(): Promise<void> {
   }
 
   if (process.platform === "win32") {
-    console.log(`${k_logPrefix}[info] ctags generation not yet supported on Windows.`);
+    logger.info("ctags generation not yet supported on Windows.");
     return;
   }
 
   if (!FS.existsSync(k_ctagsGenScriptPath)) {
-    console.warn(`${k_logPrefix}[info] failed to find ctags generation script.`);
+    logger.warning("failed to find ctags generation script.");
     return;
   }
 
-  const watcher = FS.watch(k_paths.srcDir, {
-    encoding: "utf8",
-    recursive: true
-  }, (...args) => listener("ctags", ...args));
+  const watcher = FS.watch(
+    k_paths.srcDir,
+    {
+      encoding: "utf8",
+      recursive: true,
+    },
+    (...args) => listener("ctags", ...args)
+  );
   watchContexts.ctags = {
     target: "ctags",
-    sourceFilePath: k_paths.srcDir,
-    artifactFilePath: "tags",
-    watcher: watcher
+    paths: k_commonBuildTargetContexts.ctags.paths,
+    watcher: watcher,
   };
-  console.log(`${k_logPrefix}[info] watching '${k_paths.srcDir}' for rebuilding ctags`);
+  logger.info(
+    `watching '${k_commonBuildTargetContexts.ctags.paths.sourceDir}' for rebuilding ctags`
+  );
 }
 
 const k_ctagsBuildCooloffMs = 1_000;
@@ -219,8 +172,12 @@ class CtagsState {
   #isRebuildQueued: boolean = false;
   #earliestNextRebuildTimeMs: number = 0;
 
-  isBuilding(): boolean { return this.#process != null; }
-  isRebuildQueued(): boolean { return this.#isRebuildQueued; }
+  isBuilding(): boolean {
+    return this.#process != null;
+  }
+  isRebuildQueued(): boolean {
+    return this.#isRebuildQueued;
+  }
 
   /**
    * Stores and hooks into the given `process` through "exit" and "error" handlers.
@@ -232,17 +189,21 @@ class CtagsState {
     if (this.#process != null) {
       // TODO: clean up if process exists
       this.#clearProcess();
-      throw new Error("cannot set process because a process reference still exists");
+      throw new Error(
+        "cannot set process because a process reference still exists"
+      );
     }
     this.#process = process;
     process
       .once("exit", (code: number | null, signal: NodeJS.Signals | null) => {
-        console.log(`${k_logPrefix}[info] subprocess event: exit`, code, signal);
+        logger.info("subprocess event: exit", code, signal);
         const hasError = code !== 0;
         if (hasError) {
-          console.error(`${k_logPrefix}[error] ctags generation exited with error code; code=${code}, signal=${signal}`);
+          logger.error(
+            `ctags generation exited with error code; code=${code}, signal=${signal}`
+          );
         } else {
-          console.log(`${k_logPrefix}[info] Rebuilt ctags "tags" file.`);
+          logger.info("Rebuilt ctags 'tags' file.");
         }
         // TODO: any other process cleanup needed here?
         this.#process = null;
@@ -251,7 +212,7 @@ class CtagsState {
         }
       })
       .once("error", (error: Error) => {
-        console.error(`${k_logPrefix}[error] ctags generation failed (got "error" event)`, error);
+        logger.error("ctags generation failed (got 'error' event)", error);
         // TODO: any other process cleanup needed here?
         this.#process = null;
         if (this.#isRebuildQueued) {
@@ -277,13 +238,14 @@ class CtagsState {
    */
   queueRebuild(cooloff: boolean = false) {
     if (this.#isRebuildQueued) {
-      console.log(`${k_logPrefix}[debug] debounced - A ctags rebuild is already queued.`);
+      logger.debug("debounced - A ctags rebuild is already queued.");
       return;
     }
 
     this.#isRebuildQueued = true;
     if (cooloff) {
-      this.#earliestNextRebuildTimeMs = globalThis.performance.now() + k_ctagsBuildCooloffMs;
+      this.#earliestNextRebuildTimeMs =
+        globalThis.performance.now() + k_ctagsBuildCooloffMs;
     }
 
     if (!this.isBuilding()) {
@@ -303,7 +265,9 @@ class CtagsState {
       throw new Error("THIS IS NULL AHHHHHHHHHHHHHHHHHH"); // TODO remove
     }
     if (this.#process != null) {
-      throw new Error("cannot start rebuild because a process reference still exists");
+      throw new Error(
+        "cannot start rebuild because a process reference still exists"
+      );
     }
 
     const nowMs = globalThis.performance.now();
@@ -317,9 +281,12 @@ class CtagsState {
     this.#earliestNextRebuildTimeMs = 0;
 
     const opts: ChildProcess.CommonOptions = {
-      timeout: this.#subProcessTimeoutMs
+      timeout: this.#subProcessTimeoutMs,
     };
-    const process: ChildProcess.ChildProcess = ChildProcess.exec(this.#subProcessCommand, opts);
+    const process: ChildProcess.ChildProcess = ChildProcess.exec(
+      this.#subProcessCommand,
+      opts
+    );
     this.setProcess(process);
   }
 }
@@ -336,17 +303,23 @@ async function rebuildCtags(ctx: WatchContext) {
   }
 
   // Start generating new "tags" file.
-  console.log(`${k_logPrefix} Start generating new "tags" file.`);
+  logger.info("Start generating new 'tags' file.");
   ctagsState.queueRebuild(false);
 }
 
 // ~~~ Generic handlers and helpers ~~~
 
-async function listener(target: WatchTarget, eventType: string, filename: string | Buffer | null) {
-  console.log(`${k_logPrefix} got '${eventType}' for '${target}'`);
+async function listener(
+  target: WatchTarget,
+  eventType: string,
+  filename: string | Buffer | null
+) {
+  logger.info(`got '${eventType}' for '${target}'`);
   const ctx = watchContexts[target];
   if (ctx == null) {
-    console.warn(`${k_logPrefix}[warn] '${target}' watch target's context is not initialized. Dropping "${eventType}" event.`);
+    logger.warning(
+      `'${target}' watch target's context is not initialized. Dropping "${eventType}" event.`
+    );
     return;
   }
 
@@ -361,8 +334,8 @@ async function listener(target: WatchTarget, eventType: string, filename: string
       break;
 
     default:
-      console.warn(
-        `${k_logPrefix}[warn] unhandled event of type "${eventType}" for file "${filename}'"`
+      logger.warning(
+        `unhandled event of type "${eventType}" for file "${filename}'"`
       );
   }
 }
@@ -371,10 +344,10 @@ async function rewatch(ctx: WatchContext) {
   ctx.watcher.close();
 
   try {
-    const timeElapsedMs = await waitForFileToExist(ctx);
+    const elapsedMs = await waitForFileToExist(ctx);
   } catch (timeoutMs) {
-    console.error(
-      `${k_logPrefix}[error] file '${ctx.sourceFilePath}' disappeared for longer than ${timeoutMs}ms. Stopped watching.`
+    logger.error(
+      `file '${ctx.paths.sourceFile}' disappeared for longer than ${timeoutMs}ms. Stopped watching.`
     );
     return;
   }
@@ -403,16 +376,16 @@ function waitForFileToExist(ctx: WatchContext): Promise<number> {
   let intervalMs = 2; // must be greater than 1 for exponential backoff to work
   const startedAtMs = performance.now();
 
-  const promise = new Promise<number>((resolve, reject) => {
+  return new Promise<number>((resolve, reject) => {
     const check = () => {
-      FS.stat(ctx.sourceFilePath, (err, _stats) => {
-        const timeElapsedMs = performance.now() - startedAtMs;
-        if (timeElapsedMs > timeoutMs) {
+      FS.stat(ctx.paths.sourceFile, (err, _stats) => {
+        const elapsedMs = performance.now() - startedAtMs;
+        if (elapsedMs > timeoutMs) {
           return reject(timeoutMs);
         }
 
         if (err == null) {
-          return resolve(timeElapsedMs);
+          return resolve(elapsedMs);
         }
 
         intervalMs *= intervalMs; // exponential backoff
@@ -422,30 +395,28 @@ function waitForFileToExist(ctx: WatchContext): Promise<number> {
 
     check();
   });
-
-  return promise;
 }
 
 async function rebuild(ctx: WatchContext) {
   switch (ctx.target) {
     case "html":
-      rebuildHtml(ctx);
-      console.log(`${k_logPrefix}[info] rebuilt '${ctx.sourceFilePath}'`);
+      await buildHtml(k_commonBuildTargetContexts.rootLayoutHtml);
+      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
       break;
 
     case "css":
-      await rebuildCss(ctx);
-      console.log(`${k_logPrefix}[info] rebuilt '${ctx.sourceFilePath}'`);
+      await buildCss(k_commonBuildTargetContexts.globalCss);
+      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
       break;
 
     case "tailwind":
-      await rebuildTailwind(ctx);
-      console.log(`${k_logPrefix}[info] rebuilt '${ctx.sourceFilePath}'`);
+      await buildTailwindConfig(k_commonBuildTargetContexts.tailwindConfig);
+      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
       break;
 
     case "ctags":
       await rebuildCtags(ctx);
-      console.log(`${k_logPrefix}[info] started rebuilding ctags`);
+      logger.info("started rebuilding ctags");
       break;
   }
 }

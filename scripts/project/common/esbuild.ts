@@ -4,7 +4,7 @@ import { k_paths } from "./paths.js";
 
 const entryPoints: string[] = [
   `${k_paths.srcDir}/app.tsx`,
-  `${k_paths.srcDir}/workers/tasks/worker.ts`
+  `${k_paths.srcDir}/workers/tasks/worker.ts`,
 ];
 
 /**

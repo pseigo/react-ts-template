@@ -32,10 +32,10 @@ SCRIPT_DIR_PATH="${0%/*}"
 SCRIPT_NAME="${0##*/}"
 
 # TODO: Finish ctags gen script
-echo "gen.sh:"
-echo $SCRIPT_DIR_PATH
-echo $SCRIPT_NAME
-exit 0
+#echo "gen.sh:"
+#echo $SCRIPT_DIR_PATH
+#echo $SCRIPT_NAME
+#exit 0
 
 PROJECT_ROOT_DIR_PATH="$SCRIPT_DIR_PATH"/../../..
 DEV_ARTIFACTS_DIR_PATH="$PROJECT_ROOT_DIR_PATH"/build-dev

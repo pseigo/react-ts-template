@@ -1,10 +1,11 @@
 import * as esbuild from "esbuild";
+import type { BuildOptions } from "esbuild";
 import FS from "node:fs";
 import { basename } from "node:path";
 import * as ChildProcess from "node:child_process";
 import { type FSWatcher } from "node:fs";
 
-import { Logger } from "@/scripts/common/logging";
+import { Logger, LogLevel } from "@/scripts/common/logging";
 import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
@@ -20,6 +21,8 @@ const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR f
 const logger = new Logger({
   app: k_appName,
   file: basename(__filename, ".cjs"),
+  level: LogLevel.INFO,
+  //level: LogLevel.DEBUG,
 });
 
 type WatchTarget = "html" | "css" | "tailwind" | "ctags";
@@ -132,8 +135,17 @@ async function watchTailwind() {
 // ~~~ JS ~~~
 
 async function watchJs() {
-  const context = await esbuild.context(k_buildContextOptions);
+  const opts: BuildOptions = {
+    ...k_buildContextOptions,
+    logLevel: "info",
+    color: false,
+  };
+  const context = await esbuild.context(opts);
   await context.watch();
+  logger.info("watching app's JavaScript files");
+  logger.notice(
+    'JavaScript file change messages begin with "[watch]"; these are printed by ESBuild.'
+  );
 }
 
 // ~~~ ctags ~~~
@@ -144,17 +156,23 @@ async function watchCtags(): Promise<void> {
   }
 
   if (process.platform === "win32") {
-    logger.info("ctags generation not yet supported on Windows.");
+    logger.notice("ctags generation is not yet supported on Windows.");
     return;
   }
-
   if (!FS.existsSync(k_ctagsGenScriptPath)) {
-    logger.warning("failed to find ctags generation script.");
+    logger.error("Failed to find ctags generation script.");
     return;
   }
+  if (k_commonBuildTargetContexts.ctags.paths.sourceDir == null) {
+    logger.error(
+      "Failed to start ctags watcher because no source directory was set."
+    );
+    return;
+  }
+  // TODO: test for ctags command in path/env?
 
   const watcher = FS.watch(
-    k_paths.srcDir,
+    k_commonBuildTargetContexts.ctags.paths.sourceDir,
     {
       encoding: "utf8",
       recursive: true,
@@ -163,7 +181,10 @@ async function watchCtags(): Promise<void> {
   );
   watchContexts.ctags = {
     target: "ctags",
-    paths: k_commonBuildTargetContexts.ctags.paths,
+    paths: {
+      sourceFile: k_commonBuildTargetContexts.ctags.paths.sourceDir,
+      artifactFile: k_commonBuildTargetContexts.ctags.paths.artifactFile,
+    },
     watcher: watcher,
   };
   logger.info(
@@ -205,7 +226,7 @@ class CtagsState {
     this.#process = process;
     process
       .once("exit", (code: number | null, signal: NodeJS.Signals | null) => {
-        logger.info("subprocess event: exit", code, signal);
+        logger.debug("subprocess event: exit", code, signal);
         const hasError = code !== 0;
         if (hasError) {
           logger.error(
@@ -282,7 +303,7 @@ class CtagsState {
     const nowMs = globalThis.performance.now();
     const remainingCooloffMs = this.#earliestNextRebuildTimeMs - nowMs;
     if (remainingCooloffMs > 0) {
-      setTimeout(this.#startRebuild, remainingCooloffMs); // TODO: need to bind or no?
+      setTimeout(this.#startRebuild.bind(this), remainingCooloffMs); // TODO: need to bind or no?
       return;
     }
 
@@ -323,7 +344,7 @@ async function listener(
   eventType: string,
   filename: string | Buffer | null
 ) {
-  logger.info(`got '${eventType}' for '${target}'`);
+  logger.debug(`got '${eventType}' event for '${target}' target`);
   const ctx = watchContexts[target];
   if (ctx == null) {
     logger.warning(
@@ -353,7 +374,7 @@ async function rewatch(ctx: WatchContext) {
   ctx.watcher.close();
 
   try {
-    const elapsedMs = await waitForFileToExist(ctx);
+    const _elapsedMs = await waitForFileToExist(ctx);
   } catch (timeoutMs) {
     logger.error(
       `file '${ctx.paths.sourceFile}' disappeared for longer than ${timeoutMs}ms. Stopped watching.`
@@ -410,7 +431,7 @@ async function rebuild(ctx: WatchContext) {
   switch (ctx.target) {
     case "html":
       await buildHtml(k_commonBuildTargetContexts.rootLayoutHtml);
-      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
+      logger.info(`redeployed '${ctx.paths.sourceFile}'`);
       break;
 
     case "css":
@@ -425,7 +446,7 @@ async function rebuild(ctx: WatchContext) {
 
     case "ctags":
       await rebuildCtags(ctx);
-      logger.info("started rebuilding ctags");
+      logger.debug("started rebuilding ctags");
       break;
   }
 }

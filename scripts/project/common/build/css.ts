@@ -7,7 +7,6 @@ import postcssLoadConfig, {
   type ConfigContext as PostCssLoadConfigContext,
 } from "postcss-load-config";
 
-import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import type { BuildContext } from "./context";
@@ -15,14 +14,17 @@ import type { BuildContext } from "./context";
 /**
  * Builds a CSS source file referenced in the given `ctx`.
  *
+ * @requires The process's working directory to be the package's root
+ *  directory. Use `assertCwdIsPackageRootDir` from
+ *  "@/scripts/common/packages" to assert this invariant before calling
+ *  this function.
+ *
  * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
  * @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
  * @throws {Error} If PostCSS config cannot be found or parsed.
  * @throws {Error} If PostCSS cannot process the CSS source file's contents.
  */
 export async function buildCss(ctx: BuildContext) {
-  assertCwdIsPackageRootDir();
-
   const processedCss = await processCss(ctx);
 
   // @throws {Error} If `ctx.paths.artifactFile` cannot be written to.

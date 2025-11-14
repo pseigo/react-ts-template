@@ -5,6 +5,7 @@ import * as ChildProcess from "node:child_process";
 import { type FSWatcher } from "node:fs";
 
 import { Logger } from "@/scripts/common/logging";
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
@@ -46,7 +47,15 @@ const watchContexts: Record<WatchTarget, WatchContext | null> = {
 
 watch();
 
+/**
+ * @requires The process's working directory to be the package's root
+ *  directory.
+ * @throws {Error} If the process's working directory is not the package's root
+ *  directory.
+ */
 async function watch() {
+  assertCwdIsPackageRootDir();
+
   await watchHtml();
   await watchCss();
   await watchTailwind();

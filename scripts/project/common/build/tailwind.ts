@@ -1,10 +1,7 @@
 import * as FS from "node:fs";
 import resolveTailwindConfig from "tailwindcss/resolveConfig";
 
-import {
-  assertCwdIsPackageRootDir,
-  findEnclosingPackageDir,
-} from "@/scripts/common/packages";
+import { findEnclosingPackageDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import type { BuildContext } from "./context";
@@ -13,6 +10,11 @@ import type { BuildContext } from "./context";
  * Creates a JSON reprenstation of a TailwindCSS configuration from the config
  * file referenced in the given `ctx.`
  *
+ * @requires The process's working directory to be the package's root
+ *  directory. Use `assertCwdIsPackageRootDir` from
+ *  "@/scripts/common/packages" to assert this invariant before calling
+ *  this function.
+ *
  * @throws {Error} If `ctx.paths.artifactDir` is not provided.
  * @throws {Error} If `ctx.paths.artifactDir` does not exist and cannot be created.
  * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
@@ -20,8 +22,6 @@ import type { BuildContext } from "./context";
  * @throws {Error} If TailwindCSS config cannot be parsed.
  */
 export async function buildTailwindConfig(ctx: BuildContext) {
-  assertCwdIsPackageRootDir();
-
   if (ctx.paths.artifactDir == null || ctx.paths.artifactDir === "") {
     throw new Error("missing required 'ctx.paths.artifactDir'");
   }

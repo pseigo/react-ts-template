@@ -3,6 +3,7 @@ import FS from "node:fs";
 import { basename } from "node:path";
 
 import { Logger } from "@/scripts/common/logging";
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
@@ -30,9 +31,14 @@ async function deployStaticAssets() {
   });
 }
 
+/**
+ * @requires The process's working directory to be the package's root
+ *  directory.
+ * @throws {Error} If the process's working directory is not the package's root
+ *  directory.
+ */
 async function build() {
-  //console.log("args:");
-  //console.log(process.argv);
+  assertCwdIsPackageRootDir();
 
   logger.info("Initializing 'dist' directory...");
   await initDistDir();

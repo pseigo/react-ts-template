@@ -27,7 +27,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "npm run all -- build:dist build:types",
+    "build": "npm run all -- build:dist build:types ctags:regen-project",
     "build:dist": "npm run type-check-only:app && npm run build:scripts && node build-dev/scripts/project/build.cjs",
     "build:scripts": "npm run type-check-only:scripts && node scripts/project/build_scripts.js",
     "build:types": "npx tsc --build tsconfig.json",
@@ -67,9 +67,9 @@
     "test-coverage": "npm run all -- --sequential type-check-only:test _test-coverage:do",
     "_test:do": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config config/jest.config.cjs",
     "_test-coverage:do": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config config/jest.config.cjs --coverage",
-    "ctags:regen-all": ". scripts/project/ctags/gen.sh --all",
-    "ctags:regen-deps": ". scripts/project/ctags/gen.sh --deps",
-    "ctags:regen-project": ". scripts/project/ctags/gen.sh --project",
+    "ctags:regen-all": "./scripts/project/ctags/gen.sh --all",
+    "ctags:regen-deps": "./scripts/project/ctags/gen.sh --deps",
+    "ctags:regen-project": "./scripts/project/ctags/gen.sh --project",
     "all": "npx npm-run-all --npm-path npm"
   },
   "dependencies": {

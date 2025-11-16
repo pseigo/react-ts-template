@@ -26,18 +26,7 @@ export async function buildTailwindConfig(ctx: BuildContext) {
     throw new Error("missing required 'ctx.paths.artifactDir'");
   }
 
-  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
-  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
-  if (maybePackagePaths == null) {
-    throw new Error(
-      "failed to find an enclosing Node package relative to this script"
-    );
-  }
-  const { packageDirRelPath } = maybePackagePaths;
-
-  const configFilePath = `${packageDirRelPath}/${ctx.paths.sourceFile}`;
-  const unresolvedConfig = require(configFilePath);
-  const config = resolveTailwindConfig(unresolvedConfig);
+  const config = loadConfig(ctx);
   const theme = config["theme"];
   const rawThemeStr = JSON.stringify(theme);
 
@@ -54,4 +43,21 @@ export async function buildTailwindConfig(ctx: BuildContext) {
     mode: 0o644, // rw-r--r--
     flag: "w",
   });
+}
+
+function loadConfig(
+  ctx: BuildContext
+): ReturnType<typeof resolveTailwindConfig> {
+  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
+  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
+  if (maybePackagePaths == null) {
+    throw new Error(
+      "failed to find an enclosing Node package relative to this script"
+    );
+  }
+  const { packageDirRelPath } = maybePackagePaths;
+
+  const configFilePath = `${packageDirRelPath}/${ctx.paths.sourceFile}`;
+  const unresolvedConfig = require(configFilePath);
+  return resolveTailwindConfig(unresolvedConfig);
 }

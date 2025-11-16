@@ -1,12 +1,14 @@
 import * as esbuild from "esbuild";
 import type { BuildOptions } from "esbuild";
-import FS from "node:fs";
-import { basename } from "node:path";
 import * as ChildProcess from "node:child_process";
-import { type FSWatcher } from "node:fs";
+import FS, { type FSWatcher } from "node:fs";
+import { basename } from "node:path";
 
 import { Logger, LogLevel } from "@/scripts/common/logging";
-import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+import {
+  assertCwdIsPackageRootDir,
+  findEnclosingPackageDir,
+} from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
@@ -15,14 +17,21 @@ import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
 import { k_buildContextOptions } from "./common/esbuild";
 
+type WatchConfig = Record<string, unknown>;
+const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.js`;
+
+const k_subProcessTerminateSignal: NodeJS.Signals = "SIGTERM";
+
+const k_ctagsSubProcessTimeoutMsConfigKey = "ctagsSubProcessTimeoutMs";
 const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
+const k_ctagsSubProcessCommand = `"${k_ctagsGenScriptPath}" --project`;
+const k_ctagsBuildCooloffMs = 1_500;
 
 const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR fetch from package.json's "name" property
 const logger = new Logger({
   app: k_appName,
   file: basename(__filename, ".cjs"),
   level: LogLevel.INFO,
-  //level: LogLevel.DEBUG,
 });
 
 type WatchTarget = "html" | "css" | "tailwind" | "ctags";
@@ -59,11 +68,49 @@ watch();
 async function watch() {
   assertCwdIsPackageRootDir();
 
+  let maybeConfig: WatchConfig | null = null;
+  try {
+    maybeConfig = loadConfig();
+  } catch (error: unknown) {
+    const reason = (error instanceof Error && error.message) ?? "unknown";
+    logger.error(`Failed to load watch config. Reason: ${reason}`);
+    return;
+  }
+  const config = maybeConfig;
+
   await watchHtml();
   await watchCss();
   await watchTailwind();
   await watchJs();
-  await watchCtags();
+
+  try {
+    initCtags(config);
+    await watchCtags();
+  } catch (error: unknown) {
+    const reason = (error instanceof Error && error.message) ?? "unknown";
+    logger.error(`Failed to start watching ctags. Reason: ${reason}`);
+  }
+}
+
+function loadConfig(): WatchConfig {
+  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
+  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
+  if (maybePackagePaths == null) {
+    throw new Error(
+      "Failed to find an enclosing Node package relative to this script."
+    );
+  }
+  const { packageDirRelPath } = maybePackagePaths;
+
+  const configFilePath = `${packageDirRelPath}/${k_watchConfigFilePath}`;
+  const unresolvedConfig = require(configFilePath);
+
+  if (!Object.hasOwn(unresolvedConfig, "config")) {
+    throw new Error(
+      `Failed to find an exported 'config' object in '${k_watchConfigFilePath}'.`
+    );
+  }
+  return unresolvedConfig["config"] as WatchConfig;
 }
 
 // ~~~ HTML ~~~
@@ -83,8 +130,8 @@ async function watchHtml() {
     paths: k_commonBuildTargetContexts.rootLayoutHtml.paths,
     watcher: watcher,
   };
-  logger.info(
-    `watching '${k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile}'`
+  logger.debug(
+    `Watching '${k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile}'.`
   );
 }
 
@@ -105,8 +152,8 @@ async function watchCss() {
     paths: k_commonBuildTargetContexts.globalCss.paths,
     watcher: watcher,
   };
-  logger.info(
-    `watching '${k_commonBuildTargetContexts.globalCss.paths.sourceFile}'`
+  logger.debug(
+    `Watching '${k_commonBuildTargetContexts.globalCss.paths.sourceFile}'.`
   );
 }
 
@@ -127,8 +174,8 @@ async function watchTailwind() {
     paths: k_commonBuildTargetContexts.tailwindConfig.paths,
     watcher: watcher,
   };
-  logger.info(
-    `watching '${k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile}'`
+  logger.debug(
+    `Watching '${k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile}'.`
   );
 }
 
@@ -142,7 +189,7 @@ async function watchJs() {
   };
   const context = await esbuild.context(opts);
   await context.watch();
-  logger.info("watching app's JavaScript files");
+  logger.debug("Watching app's JavaScript files.");
   logger.notice(
     'JavaScript file change messages begin with "[watch]"; these are printed by ESBuild.'
   );
@@ -150,13 +197,40 @@ async function watchJs() {
 
 // ~~~ ctags ~~~
 
+let ctagsGenerator: CtagsGenerator | null;
+
+/**
+ * @throws {Error} If ctags watcher fails to initialize.
+ *  Read the error's `message` property value for details.
+ */
+function initCtags(config: WatchConfig) {
+  if (!Object.hasOwn(config, k_ctagsSubProcessTimeoutMsConfigKey)) {
+    throw new Error(
+      `Missing required '${k_ctagsSubProcessTimeoutMsConfigKey}' key in '${k_watchConfigFilePath}'.`
+    );
+  }
+  const subProcessTimeoutMs: unknown =
+    config[k_ctagsSubProcessTimeoutMsConfigKey];
+  if (!isNaturalNumber(subProcessTimeoutMs)) {
+    throw new Error(
+      `Value for '${k_ctagsSubProcessTimeoutMsConfigKey}' key in '${k_watchConfigFilePath}' must be a non-negative integer.`
+    );
+  }
+
+  ctagsGenerator = new CtagsGenerator(subProcessTimeoutMs);
+}
+
+function isNaturalNumber(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0;
+}
+
 async function watchCtags(): Promise<void> {
   if (watchContexts.ctags != null) {
     watchContexts.ctags.watcher.close();
   }
 
   if (process.platform === "win32") {
-    logger.notice("ctags generation is not yet supported on Windows.");
+    logger.notice("Ctags generation is not yet supported on Windows.");
     return;
   }
   if (!FS.existsSync(k_ctagsGenScriptPath)) {
@@ -187,98 +261,48 @@ async function watchCtags(): Promise<void> {
     },
     watcher: watcher,
   };
-  logger.info(
-    `watching '${k_commonBuildTargetContexts.ctags.paths.sourceDir}' for rebuilding ctags`
+  logger.debug(
+    `Watching '${watchContexts.ctags.paths.sourceFile}' for rebuilding ctags.`
   );
 }
 
-const k_ctagsBuildCooloffMs = 1_000;
-
-class CtagsState {
-  readonly #subProcessCommand = `"${k_ctagsGenScriptPath}" --project`;
-  readonly #subProcessTimeoutMs = 2_000;
+class CtagsGenerator {
+  readonly #subProcessTimeoutMs: number;
 
   #process: ChildProcess.ChildProcess | null = null;
   #isRebuildQueued: boolean = false;
-  #earliestNextRebuildTimeMs: number = 0;
+  #cooloffEndsAtMs: number | null = null;
 
-  isBuilding(): boolean {
+  constructor(subProcessTimeoutMs: number) {
+    this.#subProcessTimeoutMs = subProcessTimeoutMs;
+  }
+
+  isGenerating(): boolean {
     return this.#process != null;
   }
-  isRebuildQueued(): boolean {
-    return this.#isRebuildQueued;
-  }
 
   /**
-   * Stores and hooks into the given `process` through "exit" and "error" handlers.
-   *
-   * When the `process` terminates, starts a "tags" file rebuild iff a rebuild
-   * was queued with {@link queueRebuild} _before_ the `process` terminated.
+   * @param {object} opts
+   * @param {boolean} opts.cooloff - If `false`, a rebuild will begin as soon
+   *  as the current build completes. If `true`, the next rebuild will happen
+   *  no sooner than the configured cooloff period
+   *  (see: `k_ctagsBuildCooloffMs`); useful to mitigate thrashing in case many
+   *  files update in a short time. Defaults to `false`.
    */
-  setProcess(process: ChildProcess.ChildProcess): void {
-    if (this.#process != null) {
-      // TODO: clean up if process exists
-      this.#clearProcess();
-      throw new Error(
-        "cannot set process because a process reference still exists"
-      );
-    }
-    this.#process = process;
-    process
-      .once("exit", (code: number | null, signal: NodeJS.Signals | null) => {
-        logger.debug("subprocess event: exit", code, signal);
-        const hasError = code !== 0;
-        if (hasError) {
-          logger.error(
-            `ctags generation exited with error code; code=${code}, signal=${signal}`
-          );
-        } else {
-          logger.info("Rebuilt ctags 'tags' file.");
-        }
-        // TODO: any other process cleanup needed here?
-        this.#process = null;
-        if (this.#isRebuildQueued) {
-          this.#startRebuild();
-        }
-      })
-      .once("error", (error: Error) => {
-        logger.error("ctags generation failed (got 'error' event)", error);
-        // TODO: any other process cleanup needed here?
-        this.#process = null;
-        if (this.#isRebuildQueued) {
-          this.#startRebuild();
-        }
-      });
-  }
-
-  /**
-   * If a child process is currently stored, sends a terminate signal and
-   * performs cleanup.
-   *
-   * When this function returns, `this.#process` will be `null` and it will be
-   * safe for client code to immediately call functions like {@link setProcess}
-   * or `#startRebuild`.
-   */
-  #clearProcess(): void {
-    // TODO: stub
-  }
-
-  /**
-   *
-   */
-  queueRebuild(cooloff: boolean = false) {
+  queueRebuild(opts: { cooloff: boolean } = { cooloff: false }) {
     if (this.#isRebuildQueued) {
-      logger.debug("debounced - A ctags rebuild is already queued.");
+      logger.debug("Debounced - A ctags rebuild is already queued.");
       return;
     }
 
     this.#isRebuildQueued = true;
-    if (cooloff) {
-      this.#earliestNextRebuildTimeMs =
-        globalThis.performance.now() + k_ctagsBuildCooloffMs;
+    if (opts.cooloff) {
+      this.#startCooloff();
     }
 
-    if (!this.isBuilding()) {
+    // If a process is running, its exit/error handler will start the rebuild.
+    // Otherwise, we need to start it here.
+    if (!this.isGenerating()) {
       this.#startRebuild();
     }
   }
@@ -287,54 +311,114 @@ class CtagsState {
    * Starts a child process to rebuild the "tags" file as soon as the current
    * cooloff period ends, or immediately if there is no active cooloff period.
    *
-   * @requires `this.#process` is null.
-   * @throws {Error} if `this.#process` is non-null.
+   * @requires `!this.isGenerating()`
+   * @throws {Error} If `this.isGenerating()`.
    */
   #startRebuild() {
-    if (this == null) {
-      throw new Error("THIS IS NULL AHHHHHHHHHHHHHHHHHH"); // TODO remove
-    }
-    if (this.#process != null) {
+    if (this.isGenerating()) {
       throw new Error(
-        "cannot start rebuild because a process reference still exists"
+        "Cannot start ctags rebuild because a build is already in progress."
       );
     }
 
-    const nowMs = globalThis.performance.now();
-    const remainingCooloffMs = this.#earliestNextRebuildTimeMs - nowMs;
+    const remainingCooloffMs = this.#remainingCooloffMs();
     if (remainingCooloffMs > 0) {
-      setTimeout(this.#startRebuild.bind(this), remainingCooloffMs); // TODO: need to bind or no?
+      logger.debug(
+        `Postponing ctags rebuild due to cooloff (${remainingCooloffMs}ms remaining).`
+      );
+      setTimeout(this.#startRebuild.bind(this), remainingCooloffMs);
       return;
     }
+    this.#clearCooloff();
 
     this.#isRebuildQueued = false;
-    this.#earliestNextRebuildTimeMs = 0;
+    this.#startChildProcess();
+  }
 
-    const opts: ChildProcess.CommonOptions = {
+  #startChildProcess() {
+    logger.debug("Regenerating ctags...");
+    const opts: ChildProcess.ExecOptions = {
       timeout: this.#subProcessTimeoutMs,
+      killSignal: k_subProcessTerminateSignal,
     };
     const process: ChildProcess.ChildProcess = ChildProcess.exec(
-      this.#subProcessCommand,
+      k_ctagsSubProcessCommand,
       opts
     );
     this.setProcess(process);
   }
-}
 
-const ctagsState = new CtagsState();
-
-async function rebuildCtags(ctx: WatchContext) {
-  // If "tags" file generation is already in progress, queue a rebuild for when
-  // it finishes and delay by a short time in case we're experiencing many file
-  // updates.
-  if (ctagsState.isBuilding()) {
-    ctagsState.queueRebuild(true);
-    return;
+  #startCooloff() {
+    this.#cooloffEndsAtMs =
+      globalThis.performance.now() + k_ctagsBuildCooloffMs;
+  }
+  #clearCooloff() {
+    this.#cooloffEndsAtMs = null;
+  }
+  #remainingCooloffMs(): number {
+    if (this.#cooloffEndsAtMs == null) {
+      return 0;
+    }
+    const nowMs = globalThis.performance.now();
+    const remainingCooloffMs = this.#cooloffEndsAtMs - nowMs;
+    return remainingCooloffMs > 0 ? Math.ceil(remainingCooloffMs) : 0;
   }
 
-  // Start generating new "tags" file.
-  logger.info("Start generating new 'tags' file.");
-  ctagsState.queueRebuild(false);
+  /**
+   * Stores and hooks into the given `process` through "exit" and "error" handlers.
+   *
+   * When the `process` terminates, starts a rebuild if one is queued.
+   *
+   * @requires `!this.isGenerating()`
+   * @throws {Error} If `this.isGenerating()`.
+   */
+  setProcess(process: ChildProcess.ChildProcess): void {
+    if (this.isGenerating()) {
+      throw new Error(
+        "Cannot set ctags process because a build is still in progress."
+      );
+    }
+    this.#process = process;
+    process
+      .on("error", (error: Error) => {
+        logger.error("Got 'error' event from ctags generation process.", error);
+
+        this.#process = null;
+        if (this.#isRebuildQueued) {
+          this.#startRebuild();
+        }
+      })
+      .once("exit", (code: number | null, signal: NodeJS.Signals | null) => {
+        logger.debug("Ctags subprocess event: exit", code, signal);
+
+        const wasTerminated =
+          code == null && signal === k_subProcessTerminateSignal;
+        const exitedWithError = code != null && code !== 0;
+
+        if (wasTerminated) {
+          // Assuming termination implies timeout.
+          logger.error(
+            `Ctags generation timed out after ${this.#subProcessTimeoutMs}ms. Consider increasing the value for '${k_ctagsSubProcessTimeoutMsConfigKey}' in '${k_watchConfigFilePath}'.`
+          );
+        } else if (exitedWithError) {
+          logger.error(
+            `Ctags generation process exited with error code (${code}).`
+          );
+        } else {
+          logger.info('Rebuilt ctags "tags" file.');
+        }
+
+        this.#process = null;
+        if (this.#isRebuildQueued) {
+          this.#startRebuild();
+        }
+      });
+  }
+}
+
+async function startCtagsRebuild(ctx: WatchContext) {
+  if (ctagsGenerator == null) return;
+  ctagsGenerator.queueRebuild({ cooloff: ctagsGenerator.isGenerating() });
 }
 
 // ~~~ Generic handlers and helpers ~~~
@@ -344,7 +428,7 @@ async function listener(
   eventType: string,
   filename: string | Buffer | null
 ) {
-  logger.debug(`got '${eventType}' event for '${target}' target`);
+  logger.debug(`Got '${eventType}' event for '${target}' target.`);
   const ctx = watchContexts[target];
   if (ctx == null) {
     logger.warning(
@@ -365,7 +449,7 @@ async function listener(
 
     default:
       logger.warning(
-        `unhandled event of type "${eventType}" for file "${filename}'"`
+        `Unhandled event of type "${eventType}" for file "${filename}'"`
       );
   }
 }
@@ -376,8 +460,8 @@ async function rewatch(ctx: WatchContext) {
   try {
     const _elapsedMs = await waitForFileToExist(ctx);
   } catch (timeoutMs) {
-    logger.error(
-      `file '${ctx.paths.sourceFile}' disappeared for longer than ${timeoutMs}ms. Stopped watching.`
+    logger.warning(
+      `File '${ctx.paths.sourceFile}' disappeared for longer than ${timeoutMs}ms. Stopped watching.`
     );
     return;
   }
@@ -431,22 +515,21 @@ async function rebuild(ctx: WatchContext) {
   switch (ctx.target) {
     case "html":
       await buildHtml(k_commonBuildTargetContexts.rootLayoutHtml);
-      logger.info(`redeployed '${ctx.paths.sourceFile}'`);
+      logger.info(`Redeployed '${ctx.paths.sourceFile}'.`);
       break;
 
     case "css":
       await buildCss(k_commonBuildTargetContexts.globalCss);
-      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
+      logger.info(`Rebuilt '${ctx.paths.sourceFile}'.`);
       break;
 
     case "tailwind":
       await buildTailwindConfig(k_commonBuildTargetContexts.tailwindConfig);
-      logger.info(`rebuilt '${ctx.paths.sourceFile}'`);
+      logger.info(`Rebuilt '${ctx.paths.sourceFile}'.`);
       break;
 
     case "ctags":
-      await rebuildCtags(ctx);
-      logger.debug("started rebuilding ctags");
+      await startCtagsRebuild(ctx);
       break;
   }
 }

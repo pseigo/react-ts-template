@@ -5,11 +5,13 @@ export enum LogLevel {
   NONE,
   ERROR,
   WARNING,
-  NOTICE, // not as severe as WARNING, but more important than INFO.
+  NOTICE,
   INFO,
   DEBUG,
 }
 export type LogLevelName = keyof typeof LogLevel;
+
+// TODO: consider mirroring ESBuild's colour behaviour: https://esbuild.github.io/api/#color
 
 const logLevelNameStyle: Record<LogLevel, ChalkInstance> = {
   [LogLevel.NONE]: Chalk.grey,
@@ -54,15 +56,15 @@ export interface LoggerOpts {
   /**
    * Name of a file associated with log commands.
    *
-   * @example new Logger({ file: import.meta.url }); // ESM
-   * @example new Logger({ file: __filename }); // CJS
+   * @example new Logger({ file: Path.basename(__filename) }); // CJS
+   * @example new Logger({ file: Path.basename(import.meta.url) }); // ESM
    */
   file?: string;
 }
 
 export class Logger {
   #opts: LoggerOpts;
-  #logLevel: LogLevel; // to avoid null-checking on `LoggerOpts.level?`
+  #logLevel: LogLevel; // to avoid null-checks for `LoggerOpts.level`
   #logPrefix: string;
 
   constructor(opts: LoggerOpts) {
@@ -159,13 +161,13 @@ export class Logger {
 
 function createLogPrefix(opts: LoggerOpts): string {
   let prefix = "";
-  if (opts.app != null) {
+  if (opts.app != null && opts.app !== "") {
     prefix += `[${opts.app}]`;
   }
-  if (opts.namespace != null) {
+  if (opts.namespace != null && opts.namespace !== "") {
     prefix += `[${opts.namespace}]`;
   }
-  if (opts.program != null) {
+  if (opts.program != null && opts.program !== "") {
     prefix += `[${opts.program}]`;
   }
   if (opts.file != null && opts.file !== "") {

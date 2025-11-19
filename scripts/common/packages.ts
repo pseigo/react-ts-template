@@ -54,6 +54,9 @@ function doFindEnclosingPackageDir(
   return doFindEnclosingPackageDir(Path.join(dir, ".."), distance + 1);
 }
 
+/**
+ * @requires `distance >= 0`
+ */
 function buildRelPath(distance: number): string {
   if (distance === 0) {
     return ".";

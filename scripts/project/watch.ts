@@ -73,10 +73,11 @@ async function watch() {
     maybeConfig = loadConfig();
   } catch (error: unknown) {
     const reason = (error instanceof Error && error.message) ?? "unknown";
-    logger.error(`Failed to load watch config. Reason: ${reason}`);
+    logger.error(`Failed to load '${k_watchConfigFilePath}'. Reason: ${reason}`);
     return;
   }
   const config = maybeConfig;
+  logger.debug("Config:", config);
 
   await watchHtml();
   await watchCss();

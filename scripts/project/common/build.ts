@@ -6,7 +6,8 @@ export type CommonBuildTarget =
   | "rootLayoutHtml"
   | "globalCss"
   | "tailwindConfig"
-  | "ctags";
+  | "ctags"
+  | "projectWatchConfig";
 
 export const k_commonBuildTargetContexts: Record<
   CommonBuildTarget,
@@ -38,4 +39,10 @@ export const k_commonBuildTargetContexts: Record<
       artifactFile: "tags",
     },
   },
+  projectWatchConfig: {
+    paths: {
+      sourceFile: `${k_paths.configDir}/project/watch.config.json`,
+      artifactFile: `${k_paths.configDir}/project/_schemas/watch.config.schema.json`,
+    }
+  }
 };

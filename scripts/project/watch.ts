@@ -1,3 +1,8 @@
+//mport Ajv, type { JTDSchemaType } from "ajv";
+//import type { Schema as AjvSchema } from "ajv";
+//import Ajv, { JTDDataType, type JTDSchemaType } from "ajv/dist/jtd";
+import Ajv, { type DefinedError as AjvDefinedError, type JSONSchemaType } from "ajv";
+//import ajvJsonSchemaDraft7MetaSchema from "ajv/dist/refs/json-schema-draft-07.json";
 import * as esbuild from "esbuild";
 import type { BuildOptions } from "esbuild";
 import * as ChildProcess from "node:child_process";
@@ -17,8 +22,37 @@ import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
 import { k_buildContextOptions } from "./common/esbuild";
 
+// TODO: export from a shared module or smth; https://ajv.js.org/guide/managing-schemas.html
+const ajv = new Ajv();
+//ajv.addMetaSchema(ajvJsonSchemaDraft7MetaSchema);
+
+//interface WatchConfig {
+//  ctagsSubProcessTimeoutMs: number;
+//}
+
+//const watchConfigSchema: JTDSchemaType<WatchConfig> = {
+//const watchConfigSchema = {
+//  properties: {
+//    /**
+//     * Timeout (in milliseconds) for ctags regeneration to complete. Consider
+//     * increasing this value if ctags regeneration takes longer on your machine.
+//     *
+//     * Required.
+//     */
+//    ctagsSubProcessTimeoutMs: { type: "uint32" },
+//  }
+//};
+
+//type WatchConfig = JTDDataType<typeof watchConfigSchema>;
+//type WatchConfig = JTDDataType<typeof watchConfigSchema>;
+
+//const watchConfigValidate = ajv.compile<WatchConfig>(watchConfigSchema);
+//const isWatchConfigValid = ajv.compile<WatchConfig>(watchConfigSchema);
+
 type WatchConfig = Record<string, unknown>;
-const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.js`;
+//const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.js`;
+const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.json`;
+const k_watchConfigSchemaFilePath = `${k_paths.configDir}/project/_schemas/watch.config.schema.json`;
 
 const k_subProcessTerminateSignal: NodeJS.Signals = "SIGTERM";
 
@@ -31,7 +65,7 @@ const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR f
 const logger = new Logger({
   app: k_appName,
   file: basename(__filename, ".cjs"),
-  level: LogLevel.INFO,
+  level: LogLevel.DEBUG,
 });
 
 type WatchTarget = "html" | "css" | "tailwind" | "ctags";
@@ -93,6 +127,44 @@ async function watch() {
   }
 }
 
+function loadConfig(): Record<string, unknown> {
+  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
+  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
+  if (maybePackagePaths == null) {
+    throw new Error(
+      "Failed to find an enclosing Node package relative to this script."
+    );
+  }
+  const { packageDirRelPath } = maybePackagePaths;
+
+  const configFilePath = `${packageDirRelPath}/${k_watchConfigFilePath}`;
+  const config = require(configFilePath);
+
+  const schemaFilePath = `${packageDirRelPath}/${k_watchConfigSchemaFilePath}`;
+  const schema = require(schemaFilePath);
+
+  const validate = ajv.compile(schema);
+
+  if (!validate(config)) {
+    const errors = validate.errors as AjvDefinedError[];
+    for (const error of errors) {
+      // TODO: Is there a better way to construct a readable string describing the error?
+      if (error.instancePath !== "") {
+        logger.error(`Watch config property '${error.instancePath}' ${error.message}.`, error);
+      } else {
+        logger.error(`Watch config ${error.message}.`, error);
+      }
+    }
+    throw new Error(`Validation errors.`);
+  }
+
+  delete (config as object)["$schema"];
+
+  // TODO: look into TS interface generation so we can have more type safety
+  return config as WatchConfig;
+}
+
+/*
 function loadConfig(): WatchConfig {
   const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
   const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
@@ -113,6 +185,7 @@ function loadConfig(): WatchConfig {
   }
   return unresolvedConfig["config"] as WatchConfig;
 }
+*/
 
 // ~~~ HTML ~~~
 

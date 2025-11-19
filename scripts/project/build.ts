@@ -11,6 +11,7 @@ import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
 import { buildJavaScript } from "./common/build/javascript";
+import { generateConfigSchema } from "./common/build/config_schema";
 
 const k_globalCssSourceFilePath = `${k_paths.rootLayoutDir}/global.css`;
 const k_globalCssArtifactFilePath = `${k_paths.distDir}/global.css`;
@@ -58,8 +59,12 @@ async function build() {
   logger.info("Deploying static assets...");
   await deployStaticAssets();
 
+  // TODO: either call ctags/gen.sh from this script so that we can conditionally _not_ do that in case of Windows hosts (for now), or... we just include the `ctags:regen-project` package script with the `build` package script.
   //logger.info("Building ctags...");
   //await rebuildCtags(ctx);
+
+  logger.info("Generating config schemas for editors...");
+  await generateConfigSchema(k_commonBuildTargetContexts.projectWatchConfig);
 
   logger.info("Done.");
 }

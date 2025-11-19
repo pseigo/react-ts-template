@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "ctagsSubProcessTimeoutMs": {
+      "type": "integer",
+      "minimum": 0,
+      "title": "Ctags sub-process timeout (in milliseconds)",
+      "description": "Maximum time for ctags regeneration to complete before it is aborted. Consider increasing this value if ctags regeneration takes longer on your machine."
+    }
+  },
+  "required": ["ctagsSubProcessTimeoutMs"],
+  "additionalProperties": false
+}

@@ -5,3 +5,7 @@ node_modules
 /dist
 /dist.zip
 /src/unnamed_project/gen
+/config/projects/_schemas/*.config.schema.json
+
+# Local configuration.
+/config/projects/*.config.json

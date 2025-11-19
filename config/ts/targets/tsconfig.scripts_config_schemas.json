@@ -1,0 +1,44 @@
+{
+  "include": ["../../../scripts/**/*.ts"],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "paths": {
+      "@/unnamed_project/*": ["../../src/unnamed_project/*"],
+      "@/test/*": ["../../test/*"],
+      "@/scripts/*": ["../../scripts/*"],
+      "@/*": ["../../*"]
+    },
+    "rootDir": "../../../scripts",
+    "outDir": "../../../build-dev/scripts",
+    "declarationDir": "../../../build-dev/scripts",
+
+    "lib": ["esnext"],
+    "types": ["node"],
+    "target": "es2022",
+    "module": "es2022",
+    "allowJs": true,
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+
+    "listEmittedFiles": false,
+
+    "alwaysStrict": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "useUnknownInCatchVariables": true,
+    "exactOptionalPropertyTypes": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "noImplicitAny": false
+  }
+}

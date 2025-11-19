@@ -13,6 +13,8 @@
 
     "rootDir": "../../../scripts",
     "outDir": "../../../build-dev/scripts",
-    "declarationDir": "../../../build-dev/scripts"
+    "declarationDir": "../../../build-dev/scripts",
+
+    "strict": true
   }
 }

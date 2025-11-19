@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "build": "npm run all -- build:dist build:types ctags:regen-project",
-    "build:dist": "npm run type-check-only:app && npm run build:scripts && node build-dev/scripts/project/build.cjs",
+    "build:dist": "npm run build:scripts && node build-dev/scripts/project/build.cjs && npm run type-check-only:app",
     "build:scripts": "npm run type-check-only:scripts && node scripts/project/build_scripts.js",
     "build:types": "npx tsc --build tsconfig.json",
     "clean": "npm run build:scripts && node build-dev/scripts/project/clean.cjs",

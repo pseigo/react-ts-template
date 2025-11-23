@@ -1,4 +1,4 @@
-import Chalk, { type ChalkInstance } from "chalk";
+import { styleText } from "node:util";
 import { isString } from "tanaris/strings";
 
 export enum LogLevel {
@@ -11,22 +11,30 @@ export enum LogLevel {
 }
 export type LogLevelName = keyof typeof LogLevel;
 
+type StyleTextFormat = Parameters<typeof styleText>[0];
+
 // TODO: consider mirroring ESBuild's colour behaviour: https://esbuild.github.io/api/#color
 
-const logLevelNameStyle: Record<LogLevel, ChalkInstance> = {
-  [LogLevel.NONE]: Chalk.grey,
-  [LogLevel.ERROR]: Chalk.red,
-  [LogLevel.WARNING]: Chalk.yellow,
-  [LogLevel.NOTICE]: Chalk.magenta,
-  [LogLevel.INFO]: Chalk.grey,
-  [LogLevel.DEBUG]: Chalk.cyan,
+const logLevelNameStyle: Record<LogLevel, StyleTextFormat> = {
+  [LogLevel.NONE]: "grey",
+  [LogLevel.ERROR]: "red",
+  [LogLevel.WARNING]: "yellow",
+  [LogLevel.NOTICE]: "magenta",
+  [LogLevel.INFO]: "grey",
+  [LogLevel.DEBUG]: "cyan",
 };
-const logLevelMessageStyle: Record<LogLevel, ChalkInstance> = {
+const logLevelMessageStyle: Record<LogLevel, StyleTextFormat> = {
   [LogLevel.NONE]: logLevelNameStyle[LogLevel.NONE],
-  [LogLevel.ERROR]: logLevelNameStyle[LogLevel.ERROR].bold,
-  [LogLevel.WARNING]: logLevelNameStyle[LogLevel.WARNING].bold,
+  [LogLevel.ERROR]: [
+    logLevelNameStyle[LogLevel.ERROR],
+    "bold",
+  ].flat() as StyleTextFormat,
+  [LogLevel.WARNING]: [
+    logLevelNameStyle[LogLevel.WARNING],
+    "bold",
+  ].flat() as StyleTextFormat,
   [LogLevel.NOTICE]: logLevelNameStyle[LogLevel.NOTICE],
-  [LogLevel.INFO]: Chalk.black,
+  [LogLevel.INFO]: "black",
   [LogLevel.DEBUG]: logLevelNameStyle[LogLevel.DEBUG],
 };
 
@@ -183,16 +191,19 @@ function buildLogMessage(
 ): [string, unknown[]] {
   const timestamp = createLogTimestamp();
 
-  const timestampBlock = Chalk.grey(`[${timestamp}]`);
-  const prefixBlock = Chalk.grey(prefix);
-  const logLevelNameBlock = logLevelNameStyle[level](`[${LogLevel[level]}]`);
+  const timestampBlock = styleText("grey", `[${timestamp}]`);
+  const prefixBlock = styleText("grey", prefix);
+  const logLevelNameBlock = styleText(
+    logLevelNameStyle[level],
+    `[${LogLevel[level]}]`
+  );
 
   let msg = `${timestampBlock}${prefixBlock}${logLevelNameBlock}`;
   let rest = args;
 
   if (isString(args[0])) {
     msg += " ";
-    msg += logLevelMessageStyle[level](args[0]);
+    msg += styleText(logLevelMessageStyle[level], args[0]);
     rest = args.slice(1);
   }
 

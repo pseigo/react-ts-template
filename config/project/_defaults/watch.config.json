@@ -1,4 +1,4 @@
 {
-  "$schema": "./_schemas/watch.config.schema.json",
+  "$schema": "../_schemas/watch.config.schema.json",
   "ctagsSubProcessTimeoutMs": 10000
 }

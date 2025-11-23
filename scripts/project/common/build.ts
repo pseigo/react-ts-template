@@ -28,13 +28,12 @@ export const k_commonBuildTargetContexts: Record<
   tailwindConfig: {
     paths: {
       sourceFile: `${k_paths.configDir}/tailwind.config.cjs`,
-      artifactFile: `${k_paths.srcGenDir}/tailwind/compiled_theme.json`,
       artifactDir: `${k_paths.srcGenDir}/tailwind`,
+      artifactFile: `${k_paths.srcGenDir}/tailwind/compiled_theme.json`,
     },
   },
   ctags: {
     paths: {
-      sourceFile: "", // TODO: make this optional for all?
       sourceDir: k_paths.srcDir,
       artifactFile: "tags",
     },
@@ -43,6 +42,6 @@ export const k_commonBuildTargetContexts: Record<
     paths: {
       sourceFile: `${k_paths.configDir}/project/watch.config.json`,
       artifactFile: `${k_paths.configDir}/project/_schemas/watch.config.schema.json`,
-    }
-  }
+    },
+  },
 };

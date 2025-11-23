@@ -11,15 +11,52 @@ export interface EnclosingPackageDirPaths {
 }
 
 /**
- * Recursively searches **up** the filesystem from the starting `dir` (defaults
- * to the process's current working directory) until a `package.json` file is
- * found, then returns the relative path to the directory containing that
- * `package.json`.
+ * Recursively searches **up** the filesystem from the current working
+ * directory (`process.cwd()`) until a `package.json` file is found, then
+ * returns the relative path to the directory containing that `package.json`.
+ *
+ * @throws {Error} If no `package.json` could be found relative to the current
+ *  working directory.
+ */
+export function findEnclosingPackageDirRelToCwd(): string {
+  const cwd = process.cwd();
+  const maybePackagePaths = findEnclosingPackageDir(cwd);
+  if (maybePackagePaths == null) {
+    throw new Error(
+      "Failed to find an enclosing Node package relative to the current working directory."
+    );
+  }
+  return maybePackagePaths.packageDirRelPath;
+}
+
+/**
+ * Recursively searches **up** the filesystem from the script's location
+ * (`__dirname`) until a `package.json` file is found, then returns the
+ * relative path to the directory containing that `package.json`.
+ *
+ * @throws {Error} If no `package.json` could be found relative to the script's
+ *  location.
+ */
+export function findEnclosingPackageDirRelToScriptLocation(): string {
+  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
+  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
+  if (maybePackagePaths == null) {
+    throw new Error(
+      "Failed to find an enclosing Node package relative to this script."
+    );
+  }
+  return maybePackagePaths.packageDirRelPath;
+}
+
+/**
+ * Recursively searches **up** the filesystem from the starting `dir` until a
+ * `package.json` file is found, then returns the absolute and relative paths
+ * to the directory containing that `package.json`.
  *
  * Returns `null` if no `package.json` could be found.
  */
 export function findEnclosingPackageDir(
-  dir: string = process.cwd()
+  dir: string
 ): EnclosingPackageDirPaths | null {
   return doFindEnclosingPackageDir(dir, 0);
 }

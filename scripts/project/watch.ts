@@ -9,49 +9,20 @@ import * as ChildProcess from "node:child_process";
 import FS, { type FSWatcher } from "node:fs";
 import { basename } from "node:path";
 
+import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { Logger, LogLevel } from "@/scripts/common/logging";
-import {
-  assertCwdIsPackageRootDir,
-  findEnclosingPackageDir,
-} from "@/scripts/common/packages";
+import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
+import { isNonEmptyString } from "@/scripts/common/strings";
 
 import { k_commonBuildTargetContexts } from "./common/build";
 import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
-import { k_buildContextOptions } from "./common/esbuild";
+import { k_buildContextOptions } from "./common/build/javascript";
+import { loadWatchConfig, WatchConfig } from "./config/watch";
 
-// TODO: export from a shared module or smth; https://ajv.js.org/guide/managing-schemas.html
-const ajv = new Ajv();
-//ajv.addMetaSchema(ajvJsonSchemaDraft7MetaSchema);
-
-//interface WatchConfig {
-//  ctagsSubProcessTimeoutMs: number;
-//}
-
-//const watchConfigSchema: JTDSchemaType<WatchConfig> = {
-//const watchConfigSchema = {
-//  properties: {
-//    /**
-//     * Timeout (in milliseconds) for ctags regeneration to complete. Consider
-//     * increasing this value if ctags regeneration takes longer on your machine.
-//     *
-//     * Required.
-//     */
-//    ctagsSubProcessTimeoutMs: { type: "uint32" },
-//  }
-//};
-
-//type WatchConfig = JTDDataType<typeof watchConfigSchema>;
-//type WatchConfig = JTDDataType<typeof watchConfigSchema>;
-
-//const watchConfigValidate = ajv.compile<WatchConfig>(watchConfigSchema);
-//const isWatchConfigValid = ajv.compile<WatchConfig>(watchConfigSchema);
-
-type WatchConfig = Record<string, unknown>;
-//const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.js`;
-const k_watchConfigFilePath = `${k_paths.configDir}/project/watch.config.json`;
+const k_watchConfigFilePath = k_paths.configFiles.project.watch;
 const k_watchConfigSchemaFilePath = `${k_paths.configDir}/project/_schemas/watch.config.schema.json`;
 
 const k_subProcessTerminateSignal: NodeJS.Signals = "SIGTERM";
@@ -61,10 +32,9 @@ const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
 const k_ctagsSubProcessCommand = `"${k_ctagsGenScriptPath}" --project`;
 const k_ctagsBuildCooloffMs = 1_500;
 
-const k_appName = "unnamed_project"; // TODO: move to `common.constants.ts` OR fetch from package.json's "name" property
 const logger = new Logger({
   app: k_appName,
-  file: basename(__filename, ".cjs"),
+  file: basename(__filename, k_scriptExtension),
   level: LogLevel.DEBUG,
 });
 
@@ -82,6 +52,7 @@ interface WatchContext {
   };
 }
 
+/** Shared global state. **/
 const watchContexts: Record<WatchTarget, WatchContext | null> = {
   html: null,
   css: null,
@@ -89,9 +60,7 @@ const watchContexts: Record<WatchTarget, WatchContext | null> = {
   ctags: null,
 };
 
-// ~~~ Entry point ~~~
-
-watch();
+watch(); // <~~ Entry point
 
 /**
  * @requires The process's working directory to be the package's root
@@ -102,15 +71,17 @@ watch();
 async function watch() {
   assertCwdIsPackageRootDir();
 
-  let maybeConfig: WatchConfig | null = null;
+  let config: WatchConfig | null = null;
   try {
-    maybeConfig = loadConfig();
+    config = loadWatchConfig();
   } catch (error: unknown) {
     const reason = (error instanceof Error && error.message) ?? "unknown";
-    logger.error(`Failed to load '${k_watchConfigFilePath}'. Reason: ${reason}`);
+    logger.error(
+      `Failed to load '${k_watchConfigFilePath}'. Reason: ${reason}`,
+      error
+    );
     return;
   }
-  const config = maybeConfig;
   logger.debug("Config:", config);
 
   await watchHtml();
@@ -127,71 +98,22 @@ async function watch() {
   }
 }
 
-function loadConfig(): Record<string, unknown> {
-  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
-  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
-  if (maybePackagePaths == null) {
-    throw new Error(
-      "Failed to find an enclosing Node package relative to this script."
-    );
-  }
-  const { packageDirRelPath } = maybePackagePaths;
-
-  const configFilePath = `${packageDirRelPath}/${k_watchConfigFilePath}`;
-  const config = require(configFilePath);
-
-  const schemaFilePath = `${packageDirRelPath}/${k_watchConfigSchemaFilePath}`;
-  const schema = require(schemaFilePath);
-
-  const validate = ajv.compile(schema);
-
-  if (!validate(config)) {
-    const errors = validate.errors as AjvDefinedError[];
-    for (const error of errors) {
-      // TODO: Is there a better way to construct a readable string describing the error?
-      if (error.instancePath !== "") {
-        logger.error(`Watch config property '${error.instancePath}' ${error.message}.`, error);
-      } else {
-        logger.error(`Watch config ${error.message}.`, error);
-      }
-    }
-    throw new Error(`Validation errors.`);
-  }
-
-  delete (config as object)["$schema"];
-
-  // TODO: look into TS interface generation so we can have more type safety
-  return config as WatchConfig;
-}
-
-/*
-function loadConfig(): WatchConfig {
-  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
-  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
-  if (maybePackagePaths == null) {
-    throw new Error(
-      "Failed to find an enclosing Node package relative to this script."
-    );
-  }
-  const { packageDirRelPath } = maybePackagePaths;
-
-  const configFilePath = `${packageDirRelPath}/${k_watchConfigFilePath}`;
-  const unresolvedConfig = require(configFilePath);
-
-  if (!Object.hasOwn(unresolvedConfig, "config")) {
-    throw new Error(
-      `Failed to find an exported 'config' object in '${k_watchConfigFilePath}'.`
-    );
-  }
-  return unresolvedConfig["config"] as WatchConfig;
-}
-*/
-
 // ~~~ HTML ~~~
 
 async function watchHtml() {
   if (watchContexts.html != null) {
     watchContexts.html.watcher.close();
+  }
+
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile)) {
+    logger.error("Failed to start HTML watcher because no source directory was set.");
+    return;
+  }
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.rootLayoutHtml.paths.artifactFile)) {
+    logger.error("Failed to start HTML because no artifact file was set.");
+    return;
   }
 
   const watcher = FS.watch(
@@ -201,7 +123,11 @@ async function watchHtml() {
   );
   watchContexts.html = {
     target: "html",
-    paths: k_commonBuildTargetContexts.rootLayoutHtml.paths,
+    paths: {
+      sourceFile: k_commonBuildTargetContexts.rootLayoutHtml.paths.sourceFile,
+      artifactFile:
+        k_commonBuildTargetContexts.rootLayoutHtml.paths.artifactFile,
+    },
     watcher: watcher,
   };
   logger.debug(
@@ -216,6 +142,17 @@ async function watchCss() {
     watchContexts.css.watcher.close();
   }
 
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.globalCss.paths.sourceFile)) {
+    logger.error("Failed to start CSS watcher because no source directory was set.");
+    return;
+  }
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.globalCss.paths.artifactFile)) {
+    logger.error("Failed to start CSS watcher because no artifact file was set.");
+    return;
+  }
+
   const watcher = FS.watch(
     k_commonBuildTargetContexts.globalCss.paths.sourceFile,
     { encoding: "utf8" },
@@ -223,7 +160,10 @@ async function watchCss() {
   );
   watchContexts.css = {
     target: "css",
-    paths: k_commonBuildTargetContexts.globalCss.paths,
+    paths: {
+      sourceFile: k_commonBuildTargetContexts.globalCss.paths.sourceFile,
+      artifactFile: k_commonBuildTargetContexts.globalCss.paths.artifactFile,
+    },
     watcher: watcher,
   };
   logger.debug(
@@ -238,6 +178,18 @@ async function watchTailwind() {
     watchContexts.tailwind.watcher.close();
   }
 
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile)
+  ) {
+    logger.error("Failed to start TailwindCSS config watcher because no source directory was set.");
+    return;
+  }
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.tailwindConfig.paths.artifactFile)) {
+    logger.error("Failed to start TailwindCSS config watcher because no artifact file was set.");
+    return;
+  }
+
   const watcher = FS.watch(
     k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile,
     { encoding: "utf8" },
@@ -245,7 +197,11 @@ async function watchTailwind() {
   );
   watchContexts.tailwind = {
     target: "tailwind",
-    paths: k_commonBuildTargetContexts.tailwindConfig.paths,
+    paths: {
+      sourceFile: k_commonBuildTargetContexts.tailwindConfig.paths.sourceFile,
+      artifactFile:
+        k_commonBuildTargetContexts.tailwindConfig.paths.artifactFile,
+    },
     watcher: watcher,
   };
   logger.debug(
@@ -311,9 +267,15 @@ async function watchCtags(): Promise<void> {
     logger.error("Failed to find ctags generation script.");
     return;
   }
-  if (k_commonBuildTargetContexts.ctags.paths.sourceDir == null) {
+  if (!isNonEmptyString(k_commonBuildTargetContexts.ctags.paths.sourceDir)) {
     logger.error(
       "Failed to start ctags watcher because no source directory was set."
+    );
+    return;
+  }
+  if (!isNonEmptyString(k_commonBuildTargetContexts.ctags.paths.artifactFile)) {
+    logger.error(
+      "Failed to start ctags watcher because no artifact file was set."
     );
     return;
   }

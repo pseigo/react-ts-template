@@ -26,7 +26,7 @@ const k_buildContextOptions = {
   sourcemap: true,
   target: "es2022",
   platform: "node",
-  external: ["esbuild"],
+  external: ["esbuild", "prettier"],
   legalComments: "eof",
 };
 

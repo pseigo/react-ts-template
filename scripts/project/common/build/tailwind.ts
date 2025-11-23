@@ -1,29 +1,44 @@
 import * as FS from "node:fs";
 import resolveTailwindConfig from "tailwindcss/resolveConfig";
 
-import { findEnclosingPackageDir } from "@/scripts/common/packages";
+import { findEnclosingPackageDirRelToScriptLocation } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
+import { isNonEmptyString } from "@/scripts/common/strings";
 
-import type { BuildContext } from "./context";
+import { type BuildContext, missingPropertyErrorMessage } from "./context";
 
 /**
  * Creates a JSON reprenstation of a TailwindCSS configuration from the config
  * file referenced in the given `ctx.`
  *
+ * @requires `ctx.paths.sourceFile`
+ * @throws {Error} If `ctx.paths.sourceFile` is not provided.
+ * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
+
+ * @requires `ctx.paths.artifactDir`
+ * @throws {Error} If `ctx.paths.artifactDir` is not provided.
+ * @throws {Error} If `ctx.paths.artifactDir` does not exist and cannot be created.
+ *
+ * @requires `ctx.paths.artifactFile`
+ * @throws {Error} If `ctx.paths.artifactFile` is not provided.
+ * @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
+ *
+ * @throws {Error} If TailwindCSS config cannot be parsed.
+ *
  * @requires The process's working directory to be the package's root
  *  directory. Use `assertCwdIsPackageRootDir` from
  *  "@/scripts/common/packages" to assert this invariant before calling
  *  this function.
- *
- * @throws {Error} If `ctx.paths.artifactDir` is not provided.
- * @throws {Error} If `ctx.paths.artifactDir` does not exist and cannot be created.
- * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
- * @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
- * @throws {Error} If TailwindCSS config cannot be parsed.
  */
 export async function buildTailwindConfig(ctx: BuildContext) {
-  if (ctx.paths.artifactDir == null || ctx.paths.artifactDir === "") {
-    throw new Error("missing required 'ctx.paths.artifactDir'");
+  if (!isNonEmptyString(ctx.paths.sourceFile)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.sourceFile"));
+  }
+  if (!isNonEmptyString(ctx.paths.artifactDir)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.artifactDir"));
+  }
+  if (!isNonEmptyString(ctx.paths.artifactFile)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.artifactFile"));
   }
 
   const config = loadConfig(ctx);
@@ -33,8 +48,11 @@ export async function buildTailwindConfig(ctx: BuildContext) {
   try {
     FS.mkdirSync(ctx.paths.artifactDir, { recursive: true });
   } catch (error: unknown) {
-    const reason = error instanceof Error ? ` - ${error.message}` : "";
-    const msg = `failed to create Tailwind gen dir${reason}`;
+    const reason =
+      error instanceof Error && error.message !== ""
+        ? `. Reason: ${error.message}`
+        : ".";
+    const msg = `Failed to create Tailwind gen dir${reason}`;
     throw new Error(msg, { cause: error });
   }
 
@@ -48,15 +66,7 @@ export async function buildTailwindConfig(ctx: BuildContext) {
 function loadConfig(
   ctx: BuildContext
 ): ReturnType<typeof resolveTailwindConfig> {
-  const scriptDirPath = __dirname; // requires CJS; ESM uses `import.meta.url`
-  const maybePackagePaths = findEnclosingPackageDir(scriptDirPath);
-  if (maybePackagePaths == null) {
-    throw new Error(
-      "failed to find an enclosing Node package relative to this script"
-    );
-  }
-  const { packageDirRelPath } = maybePackagePaths;
-
+  const packageDirRelPath = findEnclosingPackageDirRelToScriptLocation();
   const configFilePath = `${packageDirRelPath}/${ctx.paths.sourceFile}`;
   const unresolvedConfig = require(configFilePath);
   return resolveTailwindConfig(unresolvedConfig);

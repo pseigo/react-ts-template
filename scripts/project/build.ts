@@ -7,24 +7,20 @@ import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 
 import { k_commonBuildTargetContexts } from "./common/build";
+import { initOutputDirs } from "./common/build/init";
 import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
 import { buildJavaScript } from "./common/build/javascript";
-import { generateConfigSchema } from "./common/build/config_schema";
-
-const k_globalCssSourceFilePath = `${k_paths.rootLayoutDir}/global.css`;
-const k_globalCssArtifactFilePath = `${k_paths.distDir}/global.css`;
+import { ensureLocalConfigExists } from "./common/build/config";
+import { buildJsonSchema } from "./common/build/json_schema";
+import { k_watchConfigSchema } from "./config/watch";
 
 const k_appName = "unnamed_project";
 const logger = new Logger({
   app: k_appName,
   file: basename(__filename, ".cjs"),
 });
-
-async function initDistDir() {
-  FS.mkdirSync(k_paths.distDir, { recursive: true, mode: 0o755 });
-}
 
 async function deployStaticAssets() {
   FS.cpSync(k_paths.assetsDir, `${k_paths.distDir}/assets/`, {
@@ -39,10 +35,10 @@ async function deployStaticAssets() {
  *  directory.
  */
 async function build() {
-  assertCwdIsPackageRootDir();
+  assertCwdIsPackageRootDir(); // invariant required by all helpers
 
-  logger.info("Initializing 'dist' directory...");
-  await initDistDir();
+  logger.info("Initializing output directories...");
+  await initOutputDirs();
 
   logger.info("Building TailwindCSS config for JS...");
   await buildTailwindConfig(k_commonBuildTargetContexts.tailwindConfig); // must run before JS step
@@ -63,8 +59,15 @@ async function build() {
   //logger.info("Building ctags...");
   //await rebuildCtags(ctx);
 
-  logger.info("Generating config schemas for editors...");
-  await generateConfigSchema(k_commonBuildTargetContexts.projectWatchConfig);
+  logger.info("Generating JSON config schemas for IDEs...");
+  await ensureLocalConfigExists(
+    k_commonBuildTargetContexts.projectWatchConfig,
+    { logger: logger }
+  );
+  await buildJsonSchema(
+    k_watchConfigSchema,
+    k_commonBuildTargetContexts.projectWatchConfig
+  );
 
   logger.info("Done.");
 }

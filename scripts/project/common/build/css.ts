@@ -8,23 +8,34 @@ import postcssLoadConfig, {
 } from "postcss-load-config";
 
 import { k_paths } from "@/scripts/common/paths";
+import { isNonEmptyString } from "@/scripts/common/strings";
 
-import type { BuildContext } from "./context";
+import { type BuildContext, missingPropertyErrorMessage } from "./context";
 
 /**
  * Builds a CSS source file referenced in the given `ctx`.
+ *
+ * @requires `ctx.paths.sourceFile`
+ * @throws {Error} If `ctx.paths.sourceFile` is not provided.
+ * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
+ * @throws {Error} If PostCSS cannot process `ctx.paths.sourceFile`'s contents.
+ *
+ * @requires `ctx.paths.artifactFile`
+ * @throws {Error} If `ctx.paths.artifactFile` is not provided.
+ * @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
+ *
+ * @throws {Error} If PostCSS config cannot be found or parsed.
  *
  * @requires The process's working directory to be the package's root
  *  directory. Use `assertCwdIsPackageRootDir` from
  *  "@/scripts/common/packages" to assert this invariant before calling
  *  this function.
- *
- * @throws {Error} If `ctx.paths.sourceFile` cannot be read.
- * @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
- * @throws {Error} If PostCSS config cannot be found or parsed.
- * @throws {Error} If PostCSS cannot process the CSS source file's contents.
  */
 export async function buildCss(ctx: BuildContext) {
+  if (!isNonEmptyString(ctx.paths.artifactFile)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.artifactFile"));
+  }
+
   const processedCss = await processCss(ctx);
 
   // @throws {Error} If `ctx.paths.artifactFile` cannot be written to.
@@ -40,6 +51,13 @@ export async function buildCss(ctx: BuildContext) {
  * returns the result.
  */
 async function processCss(ctx: BuildContext): Promise<string> {
+  if (!isNonEmptyString(ctx.paths.sourceFile)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.sourceFile"));
+  }
+  if (!isNonEmptyString(ctx.paths.artifactFile)) {
+    throw new Error(missingPropertyErrorMessage("ctx.paths.artifactFile"));
+  }
+
   // @throws {Error} If `ctx.paths.sourceFile` cannot be read.
   const cssSource = FS.readFileSync(ctx.paths.sourceFile, {
     encoding: "utf8",

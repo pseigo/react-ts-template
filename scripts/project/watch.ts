@@ -16,6 +16,7 @@ import { k_paths } from "@/scripts/common/paths";
 import { isNonEmptyString } from "@/scripts/common/strings";
 
 import { k_commonBuildTargetContexts } from "./common/build";
+import { errorMessageWithFallback } from "@/scripts/common/errors";
 import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
@@ -75,7 +76,7 @@ async function watch() {
   try {
     config = loadWatchConfig();
   } catch (error: unknown) {
-    const reason = (error instanceof Error && error.message) ?? "unknown";
+    const reason = errorMessageWithFallback(error, "unknown");
     logger.error(
       `Failed to load '${k_watchConfigFilePath}'. Reason: ${reason}`,
       error
@@ -93,7 +94,7 @@ async function watch() {
     initCtags(config);
     await watchCtags();
   } catch (error: unknown) {
-    const reason = (error instanceof Error && error.message) ?? "unknown";
+    const reason = errorMessageWithFallback(error, "unknown");
     logger.error(`Failed to start watching ctags. Reason: ${reason}`);
   }
 }

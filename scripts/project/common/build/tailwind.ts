@@ -1,6 +1,7 @@
 import * as FS from "node:fs";
 import resolveTailwindConfig from "tailwindcss/resolveConfig";
 
+import { isErrorWithMessage } from "@/scripts/common/errors";
 import { findEnclosingPackageDirRelToScriptLocation } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
 import { isNonEmptyString } from "@/scripts/common/strings";
@@ -48,10 +49,9 @@ export async function buildTailwindConfig(ctx: BuildContext) {
   try {
     FS.mkdirSync(ctx.paths.artifactDir, { recursive: true });
   } catch (error: unknown) {
-    const reason =
-      error instanceof Error && error.message !== ""
-        ? `. Reason: ${error.message}`
-        : ".";
+    const reason = isErrorWithMessage(error)
+      ? `. Reason: ${error.message}`
+      : ".";
     const msg = `Failed to create Tailwind gen dir${reason}`;
     throw new Error(msg, { cause: error });
   }

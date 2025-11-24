@@ -6,4 +6,4 @@ export interface WatchConfig {
    * @requires A non-negative integer.
    */
   ctagsSubProcessTimeoutMs: number;
-};
+}

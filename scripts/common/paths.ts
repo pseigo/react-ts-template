@@ -16,6 +16,11 @@ export const k_paths = {
       watch: "config/project/watch.config.json",
     },
   },
+  configSchemaFiles: {
+    project: {
+      watch: "config/project/_schemas/watch.config.schema.json",
+    },
+  },
 };
 
 /**

@@ -1,8 +1,3 @@
-//mport Ajv, type { JTDSchemaType } from "ajv";
-//import type { Schema as AjvSchema } from "ajv";
-//import Ajv, { JTDDataType, type JTDSchemaType } from "ajv/dist/jtd";
-import Ajv, { type DefinedError as AjvDefinedError, type JSONSchemaType } from "ajv";
-//import ajvJsonSchemaDraft7MetaSchema from "ajv/dist/refs/json-schema-draft-07.json";
 import * as esbuild from "esbuild";
 import type { BuildOptions } from "esbuild";
 import * as ChildProcess from "node:child_process";
@@ -21,14 +16,10 @@ import { buildHtml } from "./common/build/html";
 import { buildCss } from "./common/build/css";
 import { buildTailwindConfig } from "./common/build/tailwind";
 import { k_buildContextOptions } from "./common/build/javascript";
-import { loadWatchConfig, WatchConfig } from "./config/watch";
-
-const k_watchConfigFilePath = k_paths.configFiles.project.watch;
-const k_watchConfigSchemaFilePath = `${k_paths.configDir}/project/_schemas/watch.config.schema.json`;
+import { loadWatchConfig, type WatchConfig } from "./config/watch";
 
 const k_subProcessTerminateSignal: NodeJS.Signals = "SIGTERM";
 
-const k_ctagsSubProcessTimeoutMsConfigKey = "ctagsSubProcessTimeoutMs";
 const k_ctagsGenScriptPath = "scripts/project/ctags/gen.sh";
 const k_ctagsSubProcessCommand = `"${k_ctagsGenScriptPath}" --project`;
 const k_ctagsBuildCooloffMs = 1_500;
@@ -78,7 +69,7 @@ async function watch() {
   } catch (error: unknown) {
     const reason = errorMessageWithFallback(error, "unknown");
     logger.error(
-      `Failed to load '${k_watchConfigFilePath}'. Reason: ${reason}`,
+      `Failed to load '${k_paths.configFiles.project.watch}'. Reason: ${reason}`,
       error
     );
     return;
@@ -222,7 +213,7 @@ async function watchJs() {
   await context.watch();
   logger.debug("Watching app's JavaScript files.");
   logger.notice(
-    'JavaScript file change messages begin with "[watch]"; these are printed by ESBuild.'
+    'App JavaScript file change messages begin with "[watch]"; these are printed by _ESBuild_. Type recompilation messages begin with a timestamp like "[9:15:30 a.m.]"; these are printed by _tsc_.'
   );
 }
 
@@ -235,24 +226,7 @@ let ctagsGenerator: CtagsGenerator | null;
  *  Read the error's `message` property value for details.
  */
 function initCtags(config: WatchConfig) {
-  if (!Object.hasOwn(config, k_ctagsSubProcessTimeoutMsConfigKey)) {
-    throw new Error(
-      `Missing required '${k_ctagsSubProcessTimeoutMsConfigKey}' key in '${k_watchConfigFilePath}'.`
-    );
-  }
-  const subProcessTimeoutMs: unknown =
-    config[k_ctagsSubProcessTimeoutMsConfigKey];
-  if (!isNaturalNumber(subProcessTimeoutMs)) {
-    throw new Error(
-      `Value for '${k_ctagsSubProcessTimeoutMsConfigKey}' key in '${k_watchConfigFilePath}' must be a non-negative integer.`
-    );
-  }
-
-  ctagsGenerator = new CtagsGenerator(subProcessTimeoutMs);
-}
-
-function isNaturalNumber(value: unknown): value is number {
-  return Number.isInteger(value) && (value as number) >= 0;
+  ctagsGenerator = new CtagsGenerator(config.ctagsSubProcessTimeoutMs);
 }
 
 async function watchCtags(): Promise<void> {
@@ -435,7 +409,7 @@ class CtagsGenerator {
         if (wasTerminated) {
           // Assuming termination implies timeout.
           logger.error(
-            `Ctags generation timed out after ${this.#subProcessTimeoutMs}ms. Consider increasing the value for '${k_ctagsSubProcessTimeoutMsConfigKey}' in '${k_watchConfigFilePath}'.`
+            `Ctags generation timed out after ${this.#subProcessTimeoutMs}ms. Consider increasing the value for 'ctagsSubProcessTimeoutMs' in '${k_paths.configFiles.project.watch}'.`
           );
         } else if (exitedWithError) {
           logger.error(

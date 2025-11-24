@@ -4,6 +4,11 @@ import Ajv, {
 } from "ajv";
 import addAjvFormats from "ajv-formats";
 //import ajvJsonSchemaDraft7MetaSchema from "ajv/dist/refs/json-schema-draft-07.json";
+import { Type } from "typebox";
+
+export type TypeBoxObjectSchema<
+  SchemaProperties extends Type.TProperties = Type.TProperties,
+> = Type.TObject<SchemaProperties>;
 
 /**
  * Shared ajv instance for all scripts to use.

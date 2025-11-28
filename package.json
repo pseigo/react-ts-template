@@ -70,6 +70,7 @@
     "ctags:regen-all": "./scripts/project/ctags/gen.sh --all",
     "ctags:regen-deps": "./scripts/project/ctags/gen.sh --deps",
     "ctags:regen-project": "./scripts/project/ctags/gen.sh --project",
+    "rename": "npm run build:scripts && node build-dev/scripts/project/rename.cjs",
     "all": "npx npm-run-all --npm-path npm"
   },
   "dependencies": {

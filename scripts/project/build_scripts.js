@@ -6,6 +6,7 @@ const k_entryPoints = [
   `${k_scriptsDirPath}/build.ts`,
   `${k_scriptsDirPath}/clean.ts`,
   `${k_scriptsDirPath}/dev_server.ts`,
+  `${k_scriptsDirPath}/rename.ts`,
   `${k_scriptsDirPath}/watch.ts`,
 ];
 

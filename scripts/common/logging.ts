@@ -11,7 +11,7 @@ export enum LogLevel {
 }
 export type LogLevelName = keyof typeof LogLevel;
 
-type StyleTextFormat = Parameters<typeof styleText>[0];
+export type StyleTextFormat = Parameters<typeof styleText>[0];
 
 // TODO: consider mirroring ESBuild's colour behaviour: https://esbuild.github.io/api/#color
 
@@ -164,6 +164,10 @@ export class Logger {
       ...args
     );
     console.debug(msg, ...rest);
+  }
+
+  canPrint(level: LogLevel): boolean {
+    return this.#logLevel <= level;
   }
 }
 

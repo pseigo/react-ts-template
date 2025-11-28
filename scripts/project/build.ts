@@ -2,6 +2,7 @@ import * as esbuild from "esbuild";
 import FS from "node:fs";
 import { basename } from "node:path";
 
+import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { Logger } from "@/scripts/common/logging";
 import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
 import { k_paths } from "@/scripts/common/paths";
@@ -16,10 +17,10 @@ import { ensureLocalConfigExists } from "./common/build/config";
 import { buildJsonSchema } from "./common/build/json_schema";
 import { k_watchConfigSchema } from "./config/watch";
 
-const k_appName = "unnamed_project";
 const logger = new Logger({
   app: k_appName,
-  file: basename(__filename, ".cjs"),
+  file: basename(__filename, k_scriptExtension),
+  //level: LogLevel.DEBUG,
 });
 
 async function deployStaticAssets() {

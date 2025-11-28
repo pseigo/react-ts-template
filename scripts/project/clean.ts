@@ -1,12 +1,20 @@
 import fs from "node:fs";
+import { basename } from "node:path";
 import { exit } from "node:process";
-
+import { styleText } from "node:util";
 import { isStringArray } from "tanaris/arrays";
 import { isString } from "tanaris/strings";
 
-const k_logPrefix = "[unnamed-project][scripts/project/clean]";
+import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
+import { Logger, LogLevel } from "@/scripts/common/logging";
 
-clean();
+const logger = new Logger({
+  app: k_appName,
+  file: basename(__filename, k_scriptExtension),
+  //level: LogLevel.DEBUG,
+});
+
+clean(); // <~~ Entry point
 
 function clean() {
   const pathsToDelete: string[] = filterInvalidPaths(["dist", "build-dev"]);
@@ -19,9 +27,7 @@ function clean() {
  */
 function filterInvalidPaths(paths: string[]): string[] {
   if (!isStringArray(paths)) {
-    console.error(
-      `${k_logPrefix} Internal error: Paths list is not a string array.`
-    );
+    logger.error("Internal error: Paths list is not a string array.");
     exit(1);
   }
 
@@ -37,8 +43,8 @@ function filterInvalidPaths(paths: string[]): string[] {
     try {
       fs.accessSync(path, fs.constants.F_OK | fs.constants.W_OK);
     } catch {
-      console.warn(
-        `${k_logPrefix} Don't have WRITE permission for path '${path}'. Skipping.`
+      logger.warning(
+        `Don't have WRITE permission for path '${path}'. Skipping.`
       );
       return false;
     }
@@ -47,9 +53,7 @@ function filterInvalidPaths(paths: string[]): string[] {
     const stats = fs.lstatSync(path);
 
     if (stats.isSymbolicLink()) {
-      console.error(
-        `${k_logPrefix} Path '${path}' is a symbolic link! Skipping in case deletion causes unintentional damage...`
-      );
+      logger.error(`Path '${path}' is a symbolic link! Skipping cautiously...`);
       return false;
     }
 
@@ -63,6 +67,6 @@ function filterInvalidPaths(paths: string[]): string[] {
 function cleanPaths(paths: string[]) {
   for (const path of paths) {
     fs.rmSync(path, { recursive: true, force: true });
-    console.log(`${k_logPrefix} Deleted '${path}'.`);
+    logger.info(styleText("grey", `=> Deleted '${path}'.`));
   }
 }

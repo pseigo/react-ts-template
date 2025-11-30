@@ -59,12 +59,12 @@ import {
   parseRenameArgs,
   type RenameOptions,
 } from "./rename/options";
+import { showPager } from "./rename/paging";
 import {
   type CaseReplacementPairs,
   generateFilePatches,
   Patch,
 } from "./rename/patches";
-//import { inspectContentPatch, inspectNamesPatch } from "./rename/patches/inspect";
 import { createContentPatchDiff } from "./rename/patches/inspect/content";
 import { createNamesPatchDiff } from "./rename/patches/inspect/names";
 
@@ -76,11 +76,7 @@ const logger = new Logger({
 
 const k_statusOk = 0;
 const k_statusError = 1;
-
 const k_runCommand = "npm run rename --";
-
-const k_skipDirtyCheckContinuingMessage = `'--${OptionName.SKIP_DIRTY_CHECK}' is ON, continuing...`;
-const k_skipReviewContinuingMessage = `'--${OptionName.SKIP_REVIEW}' is ON, continuing...`;
 
 export async function renameProject() {
   // ~~~ Process command-line arguments. ~~~
@@ -125,9 +121,13 @@ export async function renameProject() {
   }
 
   // ~~~ Check git working tree status. Prompt confirmation. ~~~
-  if (opts.skipDirtyCheck) {
+  if (opts.noGit) {
     logger.info(
-      `\nGit working tree status: ${k_skipDirtyCheckContinuingMessage}`
+      `'--${OptionName.NO_GIT}': Skipping working tree status check...`
+    );
+  } else if (opts.skipDirtyCheck) {
+    logger.info(
+      `'--${OptionName.SKIP_DIRTY_CHECK}': Skipping working tree status check...`
     );
   } else {
     const gitWorkingTreeStatus = await queryGitWorkingTreeStatus();
@@ -141,7 +141,7 @@ export async function renameProject() {
       }
     } else if (gitWorkingTreeStatus === "dirty") {
       logger.warning(
-        "\n\nCAUTION: You appear to have uncommitted changes in the git working tree. Please consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...\n\nContinue anyways? (not recommended)"
+        "\nCAUTION: You appear to have uncommitted changes in the git working tree. Please consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...\n\nContinue anyways? (not recommended)"
       );
       if (!(await promptToContinue(input))) {
         return;
@@ -171,7 +171,7 @@ export async function renameProject() {
   };
   const filePaths = await selectFiles();
   const patches = await generateFilePatches(filePaths, caseReplacements);
-  await printPatches(patches, caseReplacements);
+  await printPatches(patches, caseReplacements, opts);
 
   //logger.debug("file paths:", filePaths);
   //logger.debug("generated patches:", patches);
@@ -192,15 +192,20 @@ export async function renameProject() {
 }
 
 async function printPatches(
-  patches: { content: Patch.Content; names: Patch.Names },
-  caseReplacements: CaseReplacementPairs
+  patches: Patch.File,
+  caseReplacements: CaseReplacementPairs,
+  opts: RenameOptions
 ) {
-  logger.info(
-    "\n" + (await createContentPatchDiff(patches.content, caseReplacements))
-  );
-  logger.info(
-    "\n" + (await createNamesPatchDiff(patches.names, caseReplacements))
-  );
+  const msgs = [
+    "\n" + (await createContentPatchDiff(patches.content, caseReplacements)),
+    "\n" + (await createNamesPatchDiff(patches.names, caseReplacements)),
+  ];
+  const msg = msgs.reduce((s1, s2) => s1 + "\n\n" + s2);
+  //const msg = "it's a\nPIZZA PIE";
+
+  logger.info("Showing content patch diff...");
+  (!opts.noPager && (await showPager(msg))) || logger.info(msg);
+  //msgs.forEach((m) => logger.info(m));
 }
 
 async function promptToContinue(input: ReadlineInterface): Promise<boolean> {
@@ -229,7 +234,7 @@ function createNamesSummary(opts: RenameOptions): string {
   );
 
   if (opts.skipReview) {
-    return `\n${styleText("bold", "Proposed name changes")}:\n\n${namesTable}\n\n${k_skipReviewContinuingMessage}`;
+    return `\n${styleText("bold", "Proposed name changes")}:\n\n${namesTable}\n\n'--${OptionName.SKIP_REVIEW}': Skipping confirmation...`;
   }
 
   return `\nPlease review the following ${styleText("bold", "proposed name changes")}:\n\n${namesTable}\n\nDoes this look correct? Type 'y' and press 'Enter' to continue, or 'n' to abort.`;

@@ -61,10 +61,11 @@ export namespace Patch {
     //caseReplacements: CaseReplacementPairs;
     changes: Rename[];
   }
-}
 
-async function foo() {
-  const names: Patch.Names = { changes: [] };
+  export interface File {
+    content: Patch.Content;
+    names: Patch.Names;
+  }
 }
 
 /**
@@ -76,19 +77,19 @@ async function foo() {
 export async function generateFilePatches(
   filePaths: string[],
   caseReplacements: CaseReplacementPairs
-): Promise<{ content: Patch.Content; names: Patch.Names }> {
+): Promise<Patch.File> {
   const content: Patch.Content = {
     caseReplacements: caseReplacements,
-    changes: await generateReplacementPatches(filePaths, caseReplacements),
+    changes: await generateReplacePatches(filePaths, caseReplacements),
   };
   const names: Patch.Names = {
     //caseReplacements: caseReplacements,
-    changes: await generateFilesNamePatches(filePaths, caseReplacements),
+    changes: await generateRenamePatches(filePaths, caseReplacements),
   };
   return { content: content, names: names };
 }
 
-async function generateReplacementPatches(
+async function generateReplacePatches(
   filePaths: string[],
   caseReplacements: CaseReplacementPairs
 ): Promise<Patch.Replace[]> {
@@ -147,7 +148,7 @@ async function generateReplacementPatches(
   );
 }
 
-async function generateFilesNamePatches(
+async function generateRenamePatches(
   filePaths: string[],
   caseReplacements: CaseReplacementPairs
 ): Promise<Patch.Rename[]> {
@@ -175,13 +176,15 @@ async function generateFilesNamePatches(
 }
 
 /**
- * Applies all `replacements` to `str` and returns the result.
+ * Tests which patterns in `caseReplacements` match the `str` and returns a
+ * bitwise OR of the corresponding `NameCase`s that do, otherwise `0` if none
+ * match.
  */
 const matchingReplacements = (
   str: string,
   caseReplacements: CaseReplacementPairs
 ): number =>
-  //): NameCaseFlags =>
+  //): NameCaseFlags => // TODO: `NameCaseFlags` type
   Object.entries(caseReplacements).reduce(
     (acc, [nameCase, pair]) =>
       new RegExp(pair.pattern).test(str)

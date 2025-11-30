@@ -25,13 +25,15 @@
 
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 
-import { k_shortOption, OptionName, type RenameOptions } from "./options";
+import {
+  k_parseArgsOptions,
+  k_shortOption,
+  OptionName,
+  type RenameOptions,
+} from "./options";
 
 const k_parseArgsHelpOptions: ParseArgsOptionsConfig = {
-  [OptionName.HELP]: {
-    type: "boolean",
-    short: k_shortOption[OptionName.HELP],
-  },
+  [OptionName.HELP]: k_parseArgsOptions[OptionName.HELP],
 };
 
 export function hasHelpOption(rawArgs: string[]): boolean {
@@ -150,6 +152,7 @@ OPTIONS
       New project name in Title case.
       Can be inferred from Pascal case (see CASE INFERENCE).
 
+OPTIONS - Confirmations
     -${k_shortOption[OptionName.SKIP_DIRTY_CHECK]}, --${OptionName.SKIP_DIRTY_CHECK}
       Continues without asking when the git work tree has uncommitted changes.
       (Be careful!)
@@ -157,6 +160,24 @@ OPTIONS
     -${k_shortOption[OptionName.SKIP_REVIEW]}, --${OptionName.SKIP_REVIEW}
       Continues without presenting the proposed changes or asking for approval.
       (Be careful!)
+
+OPTIONS - Environment processes
+    -${k_shortOption[OptionName.NO_PAGER]}, --${OptionName.NO_PAGER}
+      By default, the program pipes long output to the process named by the
+      \`PAGER\` environment variable, or \`less\` if found in the process's
+      environment.
+
+      This option disables this behaviour so that long output is printed to
+      stdout instead.
+
+    -${k_shortOption[OptionName.NO_GIT]}, --${OptionName.NO_GIT}
+      Disables all functionality that depends on running \`git\` from the
+      process's environment:
+
+      - Confirmation when the git work tree has uncommitted changes.
+      - Using \`git mv\` to rename files and directories without losing
+        tracking information.  When git is disabled, the program will merely
+        inform which files and directories must be renamed.
 
 EXAMPLES
     # (1) Initial rename (old name defaults to 'unnamed_project').

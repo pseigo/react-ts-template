@@ -24,12 +24,17 @@
  */
 
 import { basename } from "node:path";
-import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
+import {
+  parseArgs,
+  ParseArgsOptionDescriptor,
+  type ParseArgsOptionsConfig,
+} from "node:util";
 
 import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { isErrorWithMessage } from "@/scripts/common/errors";
 import { type Logger } from "@/scripts/common/logging";
 import { isNonEmptyString } from "@/scripts/common/strings";
+import { NameCase } from "./cases";
 
 interface CommonOpts {
   logger: Logger;
@@ -53,15 +58,24 @@ export enum OptionName {
 
   SKIP_DIRTY_CHECK = "skip-dirty-check",
   SKIP_REVIEW = "skip-review",
+
+  NO_PAGER = "no-pager",
+  NO_GIT = "no-git",
 }
 
 export const k_shortOption: Record<
-  OptionName.HELP | OptionName.SKIP_DIRTY_CHECK | OptionName.SKIP_REVIEW,
+  | OptionName.HELP
+  | OptionName.SKIP_DIRTY_CHECK
+  | OptionName.SKIP_REVIEW
+  | OptionName.NO_PAGER
+  | OptionName.NO_GIT,
   string
 > = {
   [OptionName.HELP]: "h",
   [OptionName.SKIP_DIRTY_CHECK]: "D",
   [OptionName.SKIP_REVIEW]: "R",
+  [OptionName.NO_PAGER]: "P",
+  [OptionName.NO_GIT]: "G",
 };
 
 const k_defaultOldNames = {
@@ -71,47 +85,57 @@ const k_defaultOldNames = {
   title: requireWellFormedTitleCaseOrNull("Unnamed Project")!,
 };
 
-const k_parseArgsOptions: ParseArgsOptionsConfig = {
-  [OptionName.HELP]: {
-    type: "boolean",
-    short: k_shortOption[OptionName.HELP],
-  },
+export const k_parseArgsOptions: Record<OptionName, ParseArgsOptionDescriptor> =
+  {
+    [OptionName.HELP]: {
+      short: k_shortOption[OptionName.HELP],
+      type: "boolean",
+    },
 
-  [OptionName.OLD_NAME_SNAKE]: {
-    type: "string",
-  },
-  [OptionName.OLD_NAME_KEBAB]: {
-    type: "string",
-  },
-  [OptionName.OLD_NAME_PASCAL]: {
-    type: "string",
-  },
-  [OptionName.OLD_NAME_TITLE]: {
-    type: "string",
-  },
+    [OptionName.OLD_NAME_SNAKE]: {
+      type: "string",
+    },
+    [OptionName.OLD_NAME_KEBAB]: {
+      type: "string",
+    },
+    [OptionName.OLD_NAME_PASCAL]: {
+      type: "string",
+    },
+    [OptionName.OLD_NAME_TITLE]: {
+      type: "string",
+    },
 
-  [OptionName.NEW_NAME_SNAKE]: {
-    type: "string",
-  },
-  [OptionName.NEW_NAME_KEBAB]: {
-    type: "string",
-  },
-  [OptionName.NEW_NAME_PASCAL]: {
-    type: "string",
-  },
-  [OptionName.NEW_NAME_TITLE]: {
-    type: "string",
-  },
+    [OptionName.NEW_NAME_SNAKE]: {
+      type: "string",
+    },
+    [OptionName.NEW_NAME_KEBAB]: {
+      type: "string",
+    },
+    [OptionName.NEW_NAME_PASCAL]: {
+      type: "string",
+    },
+    [OptionName.NEW_NAME_TITLE]: {
+      type: "string",
+    },
 
-  [OptionName.SKIP_DIRTY_CHECK]: {
-    type: "boolean",
-    short: k_shortOption[OptionName.SKIP_DIRTY_CHECK],
-  },
-  [OptionName.SKIP_REVIEW]: {
-    type: "boolean",
-    short: k_shortOption[OptionName.SKIP_REVIEW],
-  },
-};
+    [OptionName.SKIP_DIRTY_CHECK]: {
+      short: k_shortOption[OptionName.SKIP_DIRTY_CHECK],
+      type: "boolean",
+    },
+    [OptionName.SKIP_REVIEW]: {
+      short: k_shortOption[OptionName.SKIP_REVIEW],
+      type: "boolean",
+    },
+
+    [OptionName.NO_PAGER]: {
+      short: k_shortOption[OptionName.NO_PAGER],
+      type: "boolean",
+    },
+    [OptionName.NO_GIT]: {
+      short: k_shortOption[OptionName.NO_GIT],
+      type: "boolean",
+    },
+  };
 
 type ParseArgsResults = ReturnType<typeof parseArgs>["values"];
 type ParseArgsResultPropertyValue = ParseArgsResults[string];
@@ -134,6 +158,9 @@ export interface RenameOptions {
 
   skipDirtyCheck: boolean;
   skipReview: boolean;
+
+  noPager: boolean;
+  noGit: boolean;
 }
 
 export function parseRenameArgs(
@@ -164,6 +191,8 @@ export function parseRenameArgs(
     ...resolveNewNames(args),
     skipDirtyCheck: args[OptionName.SKIP_DIRTY_CHECK] === true,
     skipReview: args[OptionName.SKIP_REVIEW] === true,
+    noPager: args[OptionName.NO_PAGER] === true,
+    noGit: args[OptionName.NO_GIT] === true,
   };
 }
 
@@ -186,7 +215,7 @@ function resolveOldNames(args: ParseArgsResults): {
   oldNamePascal: string;
   oldNameTitle: string;
 } {
-  const allMissing = [
+  const allMissing: boolean = [
     OptionName.OLD_NAME_SNAKE,
     OptionName.OLD_NAME_KEBAB,
     OptionName.OLD_NAME_PASCAL,

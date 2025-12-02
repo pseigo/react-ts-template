@@ -90,10 +90,6 @@ export class Logger {
     if (this.#logLevel < LogLevel.ERROR) {
       return;
     }
-    if (args.length === 0) {
-      console.error();
-      return;
-    }
     const [msg, rest] = buildLogMessage(
       this.#logPrefix,
       LogLevel.ERROR,
@@ -104,10 +100,6 @@ export class Logger {
 
   warning(...args) {
     if (this.#logLevel < LogLevel.WARNING) {
-      return;
-    }
-    if (args.length === 0) {
-      console.warn();
       return;
     }
     const [msg, rest] = buildLogMessage(
@@ -122,10 +114,6 @@ export class Logger {
     if (this.#logLevel < LogLevel.NOTICE) {
       return;
     }
-    if (args.length === 0) {
-      console.info();
-      return;
-    }
     const [msg, rest] = buildLogMessage(
       this.#logPrefix,
       LogLevel.NOTICE,
@@ -138,10 +126,6 @@ export class Logger {
     if (this.#logLevel < LogLevel.INFO) {
       return;
     }
-    if (args.length === 0) {
-      console.info();
-      return;
-    }
     const [msg, rest] = buildLogMessage(
       this.#logPrefix,
       LogLevel.INFO,
@@ -152,10 +136,6 @@ export class Logger {
 
   debug(...args) {
     if (this.#logLevel < LogLevel.DEBUG) {
-      return;
-    }
-    if (args.length === 0) {
-      console.debug();
       return;
     }
     const [msg, rest] = buildLogMessage(

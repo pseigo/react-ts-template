@@ -107,18 +107,9 @@ export async function renameProject() {
     return;
   }
 
+  // ~~~ Setup. ~~~
   assertCwdIsPackageRootDir();
-
-  // ~~~ Summarize name mappings. Prompt confirmation. ~~~
   const input = createReadlineInterface({ input: stdin, output: stdout });
-
-  const namesSummary = createNamesSummary(opts);
-  logger.notice(namesSummary);
-  if (!opts.skipReview) {
-    if (!(await promptToContinue(input))) {
-      return;
-    }
-  }
 
   // ~~~ Check git working tree status. Prompt confirmation. ~~~
   if (opts.noGit) {
@@ -151,6 +142,17 @@ export async function renameProject() {
     }
   }
 
+  // ~~~ Summarize name mappings. Prompt confirmation. ~~~
+
+  const namesSummary = createNamesSummary(opts);
+  logger.notice(namesSummary);
+  if (!opts.skipReview) {
+    if (!(await promptToContinue(input))) {
+      return;
+    }
+  }
+
+  // ~~~ Generate patches. ~~~
   const caseReplacements: CaseReplacementPairs = {
     [NameCase.SNAKE]: {
       pattern: opts.oldNameSnake,

@@ -24,10 +24,10 @@
  */
 
 export const enum NameCase {
-  SNAKE = 0b1,
-  KEBAB = 0b10,
-  PASCAL = 0b100,
-  TITLE = 0b1000,
+  SNAKE = 1 << 0,
+  KEBAB = 1 << 1,
+  PASCAL = 1 << 2,
+  TITLE = 1 << 3,
 }
 
 export function nameCasesFromFlags(

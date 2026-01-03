@@ -43,10 +43,12 @@ const createRenameDiffHeader = (
   newName: string,
   isDirectory: boolean
 ): string =>
-  styleText(
-    "bold",
-    `${dirName}/{${originalName + (isDirectory ? "/" : "")} => ${newName + (isDirectory ? "/" : "")}} (move)`
-  ) + "\n";
+  `  ${dirName}/{${styleText(["bold", "red"], originalName)} => ${styleText(["bold", "green"], newName)}\}${isDirectory ? "/" : ""}\n`;
+
+//styleText(
+//  "bold",
+//  `  ${dirName}/{${originalName + (isDirectory ? "/" : "")} => ${newName + (isDirectory ? "/" : "")}} (move)`
+//) + "\n";
 //styleText("bold", `(rename ${isDirectory ? "directory" : "file"}):`) + "\n";
 //styleText("bold", `[rename] ${isDirectory ? "directory" : "file"}:`) + "\n";
 //styleText("grey", "[rename] ") + styleText("bold", `${isDirectory ? "directory" : "file"}:`) + "\n";

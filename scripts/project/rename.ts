@@ -48,6 +48,7 @@ import {
   isErrorWithMessage,
 } from "@/scripts/common/errors";
 import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+import { plural, wrapTextSmart } from "@/scripts/common/strings";
 
 import { NameCase } from "./rename/cases";
 import { queryGitWorkingTreeStatus } from "./rename/git";
@@ -67,6 +68,18 @@ import {
 } from "./rename/patches";
 import { createContentPatchDiff } from "./rename/patches/inspect/content";
 import { createNamesPatchDiff } from "./rename/patches/inspect/names";
+import { createPromptPrefix, PromptDecoration } from "./rename/prompts";
+import {
+  Command as InteractiveReviewCommand,
+  promptInteractiveReviewCommand,
+} from "./rename/review";
+
+interface PatchStats {
+  insertionCount: number;
+  deletionCount: number;
+  fileRenameCount: number;
+  directoryRenameCount: number;
+}
 
 const logger = new Logger({
   app: k_appName,
@@ -76,6 +89,8 @@ const logger = new Logger({
 
 const k_statusOk = 0;
 const k_statusError = 1;
+const k_maxGraphemesPerLine = 59;
+const k_lineIndent = 2;
 const k_runCommand = "npm run rename --";
 
 export async function renameProject() {
@@ -90,7 +105,7 @@ export async function renameProject() {
 
   if (hasHelpOption(rawArgs)) {
     const helpInfo = renderHelpInfo({ runCommand: k_runCommand });
-    logger.info(helpInfo);
+    await showPager(helpInfo);
     process.exit(k_statusOk);
     return;
   }
@@ -125,14 +140,26 @@ export async function renameProject() {
     //logger.debug("gitWorkingTreeStatus:", gitWorkingTreeStatus);
     if (gitWorkingTreeStatus === "no_git") {
       logger.warning(
-        "\n\nCAUTION: Could not find 'git' in process environment to check working tree status.\n\nPlease check \`git status\` and consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...\n\nContinue anyways? (only recommended if the working tree is clean)"
+        "\n\n" +
+          wrapTextSmart(
+            "Could not find 'git' in process environment to check working tree status.\n\nPlease check \`git status\` and consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...",
+            Math.min(k_maxGraphemesPerLine, process.stdout.columns),
+            { leftPadding: k_lineIndent }
+          ) +
+          "\nContinue anyways? (only recommended if the working tree is clean)"
       );
       if (!(await promptToContinue(input))) {
         return;
       }
     } else if (gitWorkingTreeStatus === "dirty") {
       logger.warning(
-        "\nCAUTION: You appear to have uncommitted changes in the git working tree. Please consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...\n\nContinue anyways? (not recommended)"
+        "\n" +
+          wrapTextSmart(
+            "You appear to have uncommitted changes in the git working tree. Please consider committing, stashing, or reseting any uncommitted changes so \`git status\` is clean BEFORE performing the rename (to ease code review or reversion)...",
+            Math.min(k_maxGraphemesPerLine, process.stdout.columns),
+            { leftPadding: k_lineIndent }
+          ) +
+          "\nContinue anyways? (not recommended)"
       );
       if (!(await promptToContinue(input))) {
         return;
@@ -173,7 +200,46 @@ export async function renameProject() {
   };
   const filePaths = await selectFiles();
   const patches = await generateFilePatches(filePaths, caseReplacements);
-  await printPatches(patches, caseReplacements, opts);
+
+  logger.info();
+
+  let command: InteractiveReviewCommand = InteractiveReviewCommand.QUIT;
+
+  do {
+    console.log();
+    command = await promptInteractiveReviewCommand(
+      patches,
+      caseReplacements,
+      opts,
+      input
+    );
+
+    switch (command) {
+      case InteractiveReviewCommand.QUIT:
+        break;
+
+      case InteractiveReviewCommand.HELP:
+        await printHelp(opts);
+        break;
+
+      case InteractiveReviewCommand.DIFF:
+        await printDiff(patches, caseReplacements, opts);
+        break;
+
+      case InteractiveReviewCommand.RENAMES:
+        await printRenames(patches, caseReplacements, opts);
+        break;
+
+      case InteractiveReviewCommand.SUMMARY: {
+        await printSummary(patches, caseReplacements, opts);
+        break;
+      }
+
+      case InteractiveReviewCommand.APPLY:
+        console.log("TODO");
+        break;
+    }
+  } while (command !== InteractiveReviewCommand.QUIT);
 
   //logger.debug("file paths:", filePaths);
   //logger.debug("generated patches:", patches);
@@ -193,29 +259,71 @@ export async function renameProject() {
   process.exit(k_statusOk);
 }
 
-async function printPatches(
+async function printHelp(opts: RenameOptions) {
+  const msgParts = ["TODO: Help docs"];
+  const msg = msgParts.reduce((s1, s2) => s1 + s2);
+  await showPageableMessage(msg, opts);
+}
+
+async function printDiff(
   patches: Patch.File,
   caseReplacements: CaseReplacementPairs,
   opts: RenameOptions
 ) {
-  const msgs = [
-    "\n" + (await createContentPatchDiff(patches.content, caseReplacements)),
-    "\n" + (await createNamesPatchDiff(patches.names, caseReplacements)),
-  ];
-  const msg = msgs.reduce((s1, s2) => s1 + "\n\n" + s2);
-  //const msg = "it's a\nPIZZA PIE";
+  const msg = await createContentPatchDiff(patches.content, caseReplacements);
+  await showPageableMessage(msg, opts);
+}
 
-  logger.info("Showing content patch diff...");
+async function printRenames(
+  patches: Patch.File,
+  caseReplacements: CaseReplacementPairs,
+  opts: RenameOptions
+) {
+  const msg = await createNamesPatchDiff(patches.names, caseReplacements);
+  await showPageableMessage(msg, opts);
+}
+
+const showPageableMessage = async (msg, opts: RenameOptions) => {
   (!opts.noPager && (await showPager(msg))) || logger.info(msg);
-  //msgs.forEach((m) => logger.info(m));
+};
+
+async function printSummary(
+  patches: Patch.File,
+  caseReplacements: CaseReplacementPairs,
+  opts: RenameOptions
+) {
+  const {
+    insertionCount,
+    deletionCount,
+    fileRenameCount,
+    directoryRenameCount,
+  } = calculatePatchStats(patches);
+
+  const pendingStr = `  ${insertionCount} insertion${plural(insertionCount)}(+), ${deletionCount} deletion${plural(deletionCount)}(-),\n  ${fileRenameCount} file rename${plural(fileRenameCount)}, ${directoryRenameCount} directory rename${plural(directoryRenameCount)}`;
+
+  console.log(pendingStr);
+}
+
+// TODO: Implement `calculatePatchStats`.
+function calculatePatchStats(patches: Patch.File): PatchStats {
+  const insertionCount = 22; // TODO: stub
+  const deletionCount = 22; // TODO: stub
+  const fileRenameCount = 1; // TODO: stub
+  const directoryRenameCount = 2; // TODO: stub
+
+  return {
+    insertionCount,
+    deletionCount,
+    fileRenameCount,
+    directoryRenameCount,
+  };
 }
 
 async function promptToContinue(input: ReadlineInterface): Promise<boolean> {
-  const answer = (await input.question(styleText("bold", "[yN]> ")))
-    .trimStart()
-    .toLowerCase();
+  const promptPrefix = createPromptPrefix("yN", PromptDecoration.OPTIONS);
+  const answer = (await input.question(promptPrefix)).trim().toLowerCase();
   console.log("");
-  if (!answer.startsWith("y")) {
+  if (answer !== "y") {
     logger.info("Abort.");
     process.exit(k_statusError);
     return false;

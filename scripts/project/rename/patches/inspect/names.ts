@@ -186,6 +186,6 @@ export async function createNamesPatchDiff(
       await createRenameDiffBlock(renamePatch, caseReplacements)
   );
   const blocks = await Promise.all(blockPromises);
-  const blocksStr = blocks.reduce((acc, s) => acc + s);
+  const blocksStr = blocks.reduce((acc, s) => acc + s, "");
   return blocksStr;
 }

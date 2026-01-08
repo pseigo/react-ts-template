@@ -36,7 +36,7 @@ export async function createContentPatchDiff(
   caseReplacements: CaseReplacementPairs
 ): Promise<string> {
   const fileDiffBlocks = await createFileDiffBlocks(patch, caseReplacements);
-  return fileDiffBlocks.reduce((acc, s) => acc + s);
+  return fileDiffBlocks.reduce((acc, s) => acc + s, "");
 }
 
 const createFileDiffBlocks = async (

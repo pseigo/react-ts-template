@@ -1,3 +1,28 @@
+/*
+ * react-ts-template/scripts/project/watch.ts
+ * SPDX-License-Identifier: MIT
+ *
+ * Copyright (c) 2025 Peyton Seigo
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the “Software”), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
 import * as esbuild from "esbuild";
 import type { BuildOptions } from "esbuild";
 import * as ChildProcess from "node:child_process";
@@ -30,7 +55,7 @@ const logger = new Logger({
   level: LogLevel.DEBUG,
 });
 
-type WatchTarget = "html" | "css" | "tailwind" | "ctags";
+type WatchTarget = "html" | "css" | "webSrcForTailwind" | "tailwind" | "ctags";
 
 interface WatchContext {
   target: WatchTarget;
@@ -48,6 +73,7 @@ interface WatchContext {
 const watchContexts: Record<WatchTarget, WatchContext | null> = {
   html: null,
   css: null,
+  webSrcForTailwind: null,
   tailwind: null,
   ctags: null,
 };
@@ -78,7 +104,8 @@ async function watch() {
 
   await watchHtml();
   await watchCss();
-  await watchTailwind();
+  //await watchWebSrcForTailwind(); // TODO: remove if the 'watch:css' postcss package script turns out to be sufficient
+  await watchTailwindConfig();
   await watchJs();
 
   try {
@@ -163,9 +190,49 @@ async function watchCss() {
   );
 }
 
-// ~~~ Tailwind ~~~
+// ~~~ Tailwind class watcher ~~~
 
-async function watchTailwind() {
+async function watchWebSrcForTailwind() {
+  if (watchContexts.css != null) {
+    watchContexts.css.watcher.close();
+  }
+
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.webSrcForTailwind.paths.sourceDir)) {
+    logger.error("Failed to start Tailwind CSS utility class watcher because no source directory was set.");
+    return;
+  }
+  // prettier-ignore
+  if (!isNonEmptyString(k_commonBuildTargetContexts.webSrcForTailwind.paths.artifactFile)) {
+    logger.error("Failed to start Tailwind CSS utility class watcher because no artifact file was set.");
+    return;
+  }
+
+  const watcher = FS.watch(
+    k_commonBuildTargetContexts.webSrcForTailwind.paths.sourceDir,
+    {
+      encoding: "utf8",
+      recursive: true,
+    },
+    (...args) => listener("webSrcForTailwind", ...args)
+  );
+  watchContexts.webSrcForTailwind = {
+    target: "webSrcForTailwind",
+    paths: {
+      sourceFile: k_commonBuildTargetContexts.webSrcForTailwind.paths.sourceDir,
+      artifactFile:
+        k_commonBuildTargetContexts.webSrcForTailwind.paths.artifactFile,
+    },
+    watcher: watcher,
+  };
+  logger.debug(
+    `Watching '${k_commonBuildTargetContexts.webSrcForTailwind.paths.sourceDir}' for Tailwind CSS utility class coverage changes.`
+  );
+}
+
+// ~~~ Tailwind config ~~~
+
+async function watchTailwindConfig() {
   if (watchContexts.tailwind != null) {
     watchContexts.tailwind.watcher.close();
   }
@@ -486,8 +553,12 @@ async function rewatch(ctx: WatchContext) {
       watchCss();
       break;
 
+    case "webSrcForTailwind":
+      watchWebSrcForTailwind();
+      break;
+
     case "tailwind":
-      watchTailwind();
+      watchTailwindConfig();
       break;
 
     case "ctags":
@@ -526,12 +597,20 @@ async function rebuild(ctx: WatchContext) {
   switch (ctx.target) {
     case "html":
       await buildHtml(k_commonBuildTargetContexts.rootLayoutHtml);
+      //await buildCss(k_commonBuildTargetContexts.globalCss); // TODO: remove if the 'watch:css' postcss package script turns out to be sufficient
       logger.info(`Redeployed '${ctx.paths.sourceFile}'.`);
       break;
 
     case "css":
       await buildCss(k_commonBuildTargetContexts.globalCss);
       logger.info(`Rebuilt '${ctx.paths.sourceFile}'.`);
+      break;
+
+    case "webSrcForTailwind":
+      await buildCss(k_commonBuildTargetContexts.globalCss);
+      logger.debug(
+        `Rebuilt '${ctx.paths.artifactFile}' for Tailwind CSS utility class coverage.`
+      );
       break;
 
     case "tailwind":

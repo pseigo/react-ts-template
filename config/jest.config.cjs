@@ -23,6 +23,7 @@ const config = {
   extensionsToTreatAsEsm: [".jsx", ".ts", ".tsx"],
   moduleNameMapper: {
     "^@/unnamed_project/(.*)$": "<rootDir>/src/unnamed_project/$1",
+    "^@/unnamed_project_web/(.*)$": "<rootDir>/src/unnamed_project_web/$1",
     "^@/test/(.*)$": "<rootDir>/test/$1",
     "^@/scripts/(.*)$": "<rootDir>/scripts/$1",
   },
@@ -30,7 +31,7 @@ const config = {
     "^.+\\.[jt]sx?$": ["@swc/jest", k_swcOpts],
   },
   coverageProvider: "babel",
-  coverageDirectory: "build-dev/.coverage",
+  coverageDirectory: "_build/dev/.coverage",
 };
 
 module.exports = config;

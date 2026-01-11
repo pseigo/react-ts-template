@@ -48,6 +48,8 @@ import {
   isErrorWithMessage,
 } from "@/scripts/common/errors";
 import { assertCwdIsPackageRootDir } from "@/scripts/common/packages";
+import { showPager } from "@/scripts/common/paging";
+import { createPromptPrefix, PromptDecoration } from "@/scripts/common/prompts";
 import { plural, wrapTextSmart } from "@/scripts/common/strings";
 
 import { NameCase } from "./rename/cases";
@@ -60,7 +62,6 @@ import {
   parseRenameArgs,
   type RenameOptions,
 } from "./rename/options";
-import { showPager } from "./rename/paging";
 import {
   type CaseReplacementPairs,
   generateFilePatches,
@@ -68,7 +69,6 @@ import {
 } from "./rename/patches";
 import { createContentPatchDiff } from "./rename/patches/inspect/content";
 import { createNamesPatchDiff } from "./rename/patches/inspect/names";
-import { createPromptPrefix, PromptDecoration } from "./rename/prompts";
 import {
   Command as InteractiveReviewCommand,
   promptInteractiveReviewCommand,

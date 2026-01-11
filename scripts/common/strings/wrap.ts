@@ -295,7 +295,10 @@ function doWrapTextSmart(
   if (state.line.length !== 0) {
     flushLine(state);
   }
-  return state.lines.map((line: string[]) => line.join("")).join("");
+  return state.lines
+    .map((line: string[]) => line.join(""))
+    .join("")
+    .trimEnd();
 }
 
 // TODO: consider extracting `splitAtGraphemeIndex` to tanaris

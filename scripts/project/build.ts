@@ -23,6 +23,7 @@ const logger = new Logger({
   //level: LogLevel.DEBUG,
 });
 
+// TODO: watch static assets
 async function deployStaticAssets() {
   FS.cpSync(k_paths.assetsDir, `${k_paths.distDir}/assets/`, {
     recursive: true,

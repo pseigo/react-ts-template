@@ -378,16 +378,134 @@ const k_commonRules = {
     "react/no-unstable-nested-components": "warn",
     "react/void-dom-elements-no-children": "error",
   },
+  jest: {
+    // - see: https://github.com/jest-community/eslint-plugin-jest/blob/main/README.md#rules
+    // Recommended:
+    "jest/expect-expect": "warn",
+    "jest/no-alias-methods": "warn",
+    "jest/no-conditional-expect": "warn",
+    "jest/no-deprecated-functions": "warn",
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "warn",
+    "jest/no-test-prefixes": "error",
+    "jest/no-done-callback": "error",
+    "jest/no-export": "error",
+    "jest/no-identical-title": "error",
+    "jest/no-interpolation-in-snapshots": "error",
+    "jest/no-jasmine-globals": "error",
+    "jest/no-mocks-import": "error",
+    "jest/no-standalone-expect": "error",
+    "jest/prefer-to-be": "warn",
+    "jest/prefer-to-contain": "warn",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-describe-callback": "error",
+    "jest/valid-title": ["error", { ignoreTypeOfTestName: true }],
+    "jest/valid-expect": "error",
+    "jest/valid-expect-in-promise": "error",
+    // Our rules:
+    "jest/no-confusing-set-timeout": "warn",
+    "jest/no-duplicate-hooks": "warn",
+    "jest/no-test-return-statement": "error",
+    "jest/prefer-called-with": "warn",
+    "jest/prefer-comparison-matcher": "warn",
+    "jest/prefer-each": "warn",
+    "jest/prefer-equality-matcher": "warn",
+    "jest/prefer-expect-resolves": "warn",
+    "jest/prefer-mock-promise-shorthand": "warn",
+    "jest/prefer-strict-equal": "warn",
+    "jest/prefer-todo": "warn",
+  },
 };
 
 export default [
   {
-    ignores: ["vendor/**", ".coverage/**"],
+    ignores: ["_build", "_dist"],
+  },
+  {
+    name: "config",
+    files: ["config/*.config.{js,cjs}"],
+    ignores: [],
+    languageOptions: {
+      sourceType: "module",
+      ecmaVersion: 2020,
+      parser: typescript.parser,
+      parserOptions: {
+        ecmaFeatures: {
+          impliedStrict: true,
+        },
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {},
+    },
+    plugins: {
+      "@typescript-eslint": typescript.plugin,
+    },
+    settings: {},
+    rules: {
+      ...k_commonRules.eslint,
+      ...k_commonRules.typescript,
+    },
   },
   {
     name: "unnamed-project",
-    files: ["*.config.{js,cjs}", "src/**/*.{js,jsx,ts,tsx}"],
-    ignores: ["src/unnamed_project/gen/*"],
+    files: ["src/unnamed_project/**/*.{js,ts}"],
+    languageOptions: {
+      sourceType: "module",
+      ecmaVersion: 2020,
+      parser: typescript.parser,
+      parserOptions: {
+        ecmaFeatures: {
+          impliedStrict: true,
+        },
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {},
+    },
+    plugins: {
+      "@typescript-eslint": typescript.plugin,
+    },
+    settings: {},
+    rules: {
+      ...k_commonRules.eslint,
+      ...k_commonRules.typescript,
+    },
+  },
+  {
+    name: "unnamed-project-test",
+    files: ["test/unnamed_project/**/*.{js,ts}"],
+    ignores: [],
+    languageOptions: {
+      sourceType: "module",
+      ecmaVersion: 2020,
+      parser: typescript.parser,
+      parserOptions: {
+        ecmaFeatures: {
+          impliedStrict: true,
+        },
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {
+        ...globals.jest,
+      },
+    },
+    plugins: {
+      jest,
+      "@typescript-eslint": typescript.plugin,
+    },
+    settings: {},
+    rules: {
+      ...k_commonRules.eslint,
+      ...k_commonRules.typescript,
+      ...k_commonRules.jest,
+    },
+  },
+  {
+    name: "unnamed-project-web",
+    files: ["src/unnamed_project_web/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["src/unnamed_project_web/gen/*"],
     languageOptions: {
       sourceType: "module",
       ecmaVersion: 2020,
@@ -422,8 +540,8 @@ export default [
     },
   },
   {
-    name: "unnamed-project-test",
-    files: ["test/**/*.{js,jsx,ts,tsx}"],
+    name: "unnamed-project-web-test",
+    files: ["test/unnamed_project_web/**/*.{js,jsx,ts,tsx}"],
     ignores: [],
     languageOptions: {
       sourceType: "module",
@@ -457,44 +575,7 @@ export default [
       ...k_commonRules.eslint,
       ...k_commonRules.typescript,
       ...k_commonRules.react,
-
-      // [start] Jest
-      // - see: https://github.com/jest-community/eslint-plugin-jest/blob/main/README.md#rules
-      // Recommended:
-      "jest/expect-expect": "warn",
-      "jest/no-alias-methods": "warn",
-      "jest/no-conditional-expect": "warn",
-      "jest/no-deprecated-functions": "warn",
-      "jest/no-disabled-tests": "warn",
-      "jest/no-focused-tests": "warn",
-      "jest/no-test-prefixes": "error",
-      "jest/no-done-callback": "error",
-      "jest/no-export": "error",
-      "jest/no-identical-title": "error",
-      "jest/no-interpolation-in-snapshots": "error",
-      "jest/no-jasmine-globals": "error",
-      "jest/no-mocks-import": "error",
-      "jest/no-standalone-expect": "error",
-      "jest/prefer-to-be": "warn",
-      "jest/prefer-to-contain": "warn",
-      "jest/prefer-to-have-length": "warn",
-      "jest/valid-describe-callback": "error",
-      "jest/valid-title": ["error", { ignoreTypeOfTestName: true }],
-      "jest/valid-expect": "error",
-      "jest/valid-expect-in-promise": "error",
-      // Our rules:
-      "jest/no-confusing-set-timeout": "warn",
-      "jest/no-duplicate-hooks": "warn",
-      "jest/no-test-return-statement": "error",
-      "jest/prefer-called-with": "warn",
-      "jest/prefer-comparison-matcher": "warn",
-      "jest/prefer-each": "warn",
-      "jest/prefer-equality-matcher": "warn",
-      "jest/prefer-expect-resolves": "warn",
-      "jest/prefer-mock-promise-shorthand": "warn",
-      "jest/prefer-strict-equal": "warn",
-      "jest/prefer-todo": "warn",
-      // [end] Jest
+      ...k_commonRules.jest,
     },
   },
 ];

@@ -2,24 +2,18 @@
   "extends": "../tsconfig.base",
 
   "include": [
-    "../../../src/**/*",
-    "../../../src/**/*.ts",
-    "../../../src/**/*.tsx",
-    "../../../src/**/*.js",
-    "../../../src/**/*.jsx",
-    "../../../src/**/*.json"
+    "../../../src/unnamed_project/**/*.ts",
+    "../../../src/unnamed_project/**/*.js"
   ],
-  "exclude": ["../../../src/unnamed_project/workers"],
 
   "compilerOptions": {
     "composite": true,
 
-    "lib": ["esnext", "dom"],
-    "types": ["react", "react-dom"],
-    "jsx": "react-jsx",
+    "lib": ["esnext"],
+    "types": [],
 
-    "rootDir": "../../../src",
-    "outDir": "../../../build-dev/app",
-    "declarationDir": "../../../build-dev/app"
+    "rootDir": "../../../src/unnamed_project",
+    "outDir": "../../../_build/dev/app",
+    "declarationDir": "../../../_build/dev/app"
   }
 }

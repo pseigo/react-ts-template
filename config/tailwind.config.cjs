@@ -7,8 +7,16 @@
 //const path = require("path")
 /* eslint-enable no-undef */
 
+const srcDir = "./src/unnamed_project_web";
+
+/** @type {import("tailwindcss").Config} */
 const config = {
-  content: ["./src/unnamed_project/**/*.{html,js,jsx,ts,tsx}"],
+  content: [
+    `${srcDir}/common/components/**/*.{html,js,jsx,ts,tsx}`,
+    `${srcDir}/common/hooks/**/*.{js,jsx,ts,tsx}`,
+    `${srcDir}/layouts/**/*.{html,js,jsx,ts,tsx}`,
+    `${srcDir}/pages/**/*.{html,js,jsx,ts,tsx}`,
+  ],
   theme: {
     extend: {
       spacing: {

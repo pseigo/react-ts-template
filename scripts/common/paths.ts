@@ -2,11 +2,17 @@
  * Paths relative to the root project directory.
  */
 export const k_paths = {
-  assetsDir: "assets",
-  distDir: "dist",
-  rootLayoutDir: "src/unnamed_project/layouts/root",
-  srcDir: "src/unnamed_project",
-  srcGenDir: "src/unnamed_project/gen",
+  srcDir: "src",
+  appSrcDir: "src/unnamed_project",
+  webSrcDir: "src/unnamed_project_web",
+
+  assetsDir: "priv/assets",
+  rootLayoutDir: "src/unnamed_project_web/layouts/root",
+
+  buildDir: "_build",
+  distDir: "_dist",
+  webGenSrcDir: "src/unnamed_project_web/gen",
+
   configDir: "config",
   configDirs: {
     project: "config/project",

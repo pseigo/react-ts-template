@@ -3,6 +3,7 @@
   "jsc": {
     "paths": {
       "@/unnamed_project/*": ["./src/unnamed_project/*"],
+      "@/unnamed_project_web/*": ["./src/unnamed_project_web/*"],
       "@/test/*": ["./test/*"],
       "@/scripts/*": ["./scripts/*"],
       "@/*": ["./*"]

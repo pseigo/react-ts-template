@@ -38,14 +38,13 @@ SCRIPT_NAME="${0##*/}"
 #exit 0
 
 PROJECT_ROOT_DIR_PATH="$SCRIPT_DIR_PATH"/../../..
-DEV_ARTIFACTS_DIR_PATH="$PROJECT_ROOT_DIR_PATH"/build-dev
+DEV_ARTIFACTS_DIR_PATH="$PROJECT_ROOT_DIR_PATH"/_build/dev
 INTERMEDIATE_TAGS_DIR_PATH="$DEV_ARTIFACTS_DIR_PATH"/ctags
 TAGS_FILE_PATH="$PROJECT_ROOT_DIR_PATH"/tags
 
 CTAGS_COMMON_ARGS="\
-  --exclude=dist
-  --exclude=build-dev
   --exclude=_build
+  --exclude=_dist
   --exclude=.elixir_ls
   --languages=Elixir,Erlang,JavaScript,TypeScript
   --langmap=JavaScript:+.jsx,TypeScript:+.tsx

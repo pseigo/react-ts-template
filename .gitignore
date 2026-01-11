@@ -1,10 +1,10 @@
 # Generated files.
 node_modules
 /tags
-/build-dev
-/dist
-/dist.zip
+/_build
+/_dist
 /src/unnamed_project/gen
+/src/unnamed_project_web/gen
 /config/project/_schemas
 
 # Local configuration.

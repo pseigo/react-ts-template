@@ -1,8 +1,11 @@
 {
   "references": [
-    { "path": "./config/ts/targets/tsconfig.scripts.json" },
-    { "path": "./config/ts/targets/tsconfig.test.json" },
-    { "path": "./config/ts/targets/tsconfig.app_workers.json" },
+    { "path": "./config/ts/targets/scripts/tsconfig.project.json" },
+    { "path": "./config/ts/targets/scripts/tsconfig.cli.json" },
+    { "path": "./config/ts/targets/tsconfig.web.test.json" },
+    { "path": "./config/ts/targets/tsconfig.web_workers.json" },
+    { "path": "./config/ts/targets/tsconfig.web.json" },
+    { "path": "./config/ts/targets/tsconfig.app.test.json" },
     { "path": "./config/ts/targets/tsconfig.app.json" }
   ],
 

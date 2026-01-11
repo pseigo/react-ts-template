@@ -34,19 +34,7 @@ import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { isErrorWithMessage } from "@/scripts/common/errors";
 import { type Logger } from "@/scripts/common/logging";
 import { isNonEmptyString } from "@/scripts/common/strings";
-import {
-  NameCase,
-  requireWellFormedSnakeCaseOrNull,
-  requireWellFormedKebabCaseOrNull,
-  requireWellFormedPascalCaseOrNull,
-  requireWellFormedTitleCaseOrNull,
-  resolveSnakeAndKebab,
-  resolvePascalAndTitle,
-  snakeToKebab,
-  kebabToSnake,
-  pascalToTitle,
-  titleToPascal
-} from "./cases";
+import { NameCase } from "./cases";
 
 interface CommonOpts {
   logger: Logger;
@@ -315,3 +303,148 @@ function requireValidProjectNameType(value: unknown): string | null {
   }
   throw new Error(`A project name is of the wrong type. Got: \`${value}\`.`);
 }
+
+// TODO: Write unit tests for these case-checking patterns.
+function requireWellFormedSnakeCaseOrNull(str: string | null): string | null {
+  if (str === null) {
+    return null;
+  }
+  if (/^[a-z]+(?:_[a-z]+)*$/.test(str)) {
+    return str;
+  }
+  throw new Error(`A project name does not match Snake case. Got: "${str}".`);
+}
+
+function requireWellFormedKebabCaseOrNull(str: string | null): string | null {
+  if (str === null) {
+    return null;
+  }
+  if (/^[a-z]+(?:-[a-z]+)*$/.test(str)) {
+    return str;
+  }
+  throw new Error(`A project name does not match Kebab case. Got: "${str}".`);
+}
+
+function requireWellFormedPascalCaseOrNull(str: string | null): string | null {
+  if (str === null) {
+    return null;
+  }
+  if (/^([A-Z][a-z]*)+$/.test(str)) {
+    return str;
+  }
+  throw new Error(`A project name does not match Pascal case. Got: "${str}".`);
+}
+
+function requireWellFormedTitleCaseOrNull(str: string | null): string | null {
+  if (str === null) {
+    return null;
+  }
+  if (/^[A-Za-z]+(?:[ -][A-Za-z]+)*$/.test(str)) {
+    return str;
+  }
+  throw new Error(`A project name does not match Title case. Got: "${str}".`);
+}
+
+/**
+ * @throws {Error} If `snake` and `kebab` are both `null` or `""`.
+ *
+ * @requires `snake` and `kebab` are well-formed.
+ *
+ * @returns `[snake, kebab]`
+ */
+function resolveSnakeAndKebab(
+  snake: string | null,
+  kebab: string | null
+): [string, string] {
+  const haveSnake = isNonEmptyString(snake);
+  const haveKebab = isNonEmptyString(kebab);
+  if (haveSnake && haveKebab) {
+    return [snake, kebab];
+  }
+  if (haveSnake && !haveKebab) {
+    return [snake, snakeToKebab(snake)];
+  }
+  if (!haveSnake && haveKebab) {
+    return [kebabToSnake(kebab), kebab];
+  }
+  throw new Error(
+    `At least one of Snake or Kebab case must be provided for project names.`
+  );
+}
+
+/**
+ * @throws {Error} If `pascal` and `title` are both `null` or `""`.
+ *
+ * @requires `pascal` and `title` are well-formed.
+ *
+ * @returns `[pascal, title]`
+ */
+function resolvePascalAndTitle(
+  pascal: string | null,
+  title: string | null
+): [string, string] {
+  const havePascal = isNonEmptyString(pascal);
+  const haveTitle = isNonEmptyString(title);
+  if (havePascal && haveTitle) {
+    return [pascal, title];
+  }
+  if (havePascal && !haveTitle) {
+    return [pascal, pascalToTitle(pascal)];
+  }
+  if (!havePascal && haveTitle) {
+    return [titleToPascal(title), title];
+  }
+  throw new Error(
+    `At least one of Pascal or Title case must be provided for project names.`
+  );
+}
+
+/**
+ * Returns `snake` as a kebab-case string (lowercase with words separated by
+ * hyphens).
+ *
+ * @requires `snake` is a snake-case string (lowercase with words separated by
+ *  underscores).
+ *
+ * @example snakeToKebab("unnamed_project"); //=> "unnamed-project"
+ */
+const snakeToKebab = (snake: string): string => snake.replaceAll("_", "-");
+
+/**
+ * Returns `kebab` as a snake-case string (lowercase with words separated by
+ * underscores).
+ *
+ * @requires `kebab` is a kebab-case string (lowercase with words separated by
+ *  hyphens).
+ *
+ * @example kebabToSnake("unnamed-project"); //=> "unnamed_project"
+ */
+const kebabToSnake = (kebab: string): string => kebab.replaceAll("-", "_");
+
+/**
+ * Returns `pascal` as a title-case string (each word capitalized and separated
+ * by a space).
+ *
+ * @requires `pascal` is a pascal-case string (each word capitalized with no
+ *  separator).
+ *
+ * @example pascalToTitle("UnnamedProject"); //=> "Unnamed Project"
+ * @example pascalToTitle("SqlUtilsPackage"); //=> "Sql Utils Package"
+ * @example pascalToTitle("SQLUtilsPackage"); //=> "S Q L Utils Package"
+ */
+const pascalToTitle = (pascal: string): string =>
+  // `?<!^` means "look behind that the current position is not the start".
+  pascal.replaceAll(/(?<!^)([A-Z])/g, " $1");
+
+/**
+ * Returns `title` as a pascal-case string (each word capitalized with no
+ * separator).
+ *
+ * @requires `title` is a title-case string (each word capitalized and
+ *  separated by a space).
+ *
+ * @example titleToPascal("Unnamed Project"); //=> "UnnamedProject"
+ * @example titleToPascal("Sql Utils Package"); //=> "SqlUtilsPackage"
+ * @example titleToPascal("SQL Utils Package"); //=> "SQLUtilsPackage"
+ */
+const titleToPascal = (title: string): string => title.replaceAll(" ", "");

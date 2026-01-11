@@ -2,6 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@/unnamed_project/*": ["../../src/unnamed_project/*"],
+      "@/unnamed_project_web/*": ["../../src/unnamed_project_web/*"],
       "@/test/*": ["../../test/*"],
       "@/scripts/*": ["../../scripts/*"],
       "@/*": ["../../*"]
@@ -43,8 +44,8 @@
     "fallbackPolling": "dynamicPriority",
     "excludeDirectories": [
       "../../**/node_modules",
-      "../../dist",
-      "../../build-dev",
+      "../../_build",
+      "../../_dist",
       "../../docs"
     ]
   }

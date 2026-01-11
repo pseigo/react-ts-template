@@ -1,0 +1,6 @@
+# Contributing
+
+## Directory structure
+
+TODO
+

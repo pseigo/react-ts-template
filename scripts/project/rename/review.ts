@@ -29,10 +29,10 @@ import { styleText } from "node:util";
 
 import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { Logger, LogLevel } from "@/scripts/common/logging";
+import { createPromptPrefix } from "@/scripts/common/prompts";
 
 import type { RenameOptions } from "./options";
 import type { CaseReplacementPairs, Patch } from "./patches";
-import { createPromptPrefix } from "./prompts";
 
 export enum Command {
   QUIT = 1,

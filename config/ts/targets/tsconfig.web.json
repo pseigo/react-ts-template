@@ -1,0 +1,28 @@
+{
+  "extends": "../tsconfig.base",
+
+  "references": [{ "path": "./tsconfig.app.json" }],
+
+  "include": [
+    "../../../src/unnamed_project/**/*.ts",
+    "../../../src/unnamed_project/**/*.js",
+    "../../../src/unnamed_project_web/**/*.ts",
+    "../../../src/unnamed_project_web/**/*.tsx",
+    "../../../src/unnamed_project_web/**/*.js",
+    "../../../src/unnamed_project_web/**/*.jsx",
+    "../../../src/unnamed_project_web/**/*.json"
+  ],
+  "exclude": ["../../../src/unnamed_project_web/workers"],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "lib": ["esnext", "dom"],
+    "types": ["react", "react-dom"],
+    "jsx": "react-jsx",
+
+    "rootDir": "../../../src",
+    "outDir": "../../../_build/dev/web",
+    "declarationDir": "../../../_build/dev/web"
+  }
+}

@@ -5,6 +5,7 @@ import type { BuildContext } from "./build/context";
 export type CommonBuildTarget =
   | "rootLayoutHtml"
   | "globalCss"
+  | "webSrcForTailwind"
   | "tailwindConfig"
   | "ctags"
   | "projectWatchConfig";
@@ -25,11 +26,17 @@ export const k_commonBuildTargetContexts: Record<
       artifactFile: `${k_paths.distDir}/global.css`,
     },
   },
+  webSrcForTailwind: {
+    paths: {
+      sourceDir: `${k_paths.webSrcDir}`,
+      artifactFile: `${k_paths.distDir}/global.css`,
+    },
+  },
   tailwindConfig: {
     paths: {
       sourceFile: `${k_paths.configDir}/tailwind.config.cjs`,
-      artifactDir: `${k_paths.srcGenDir}/tailwind`,
-      artifactFile: `${k_paths.srcGenDir}/tailwind/compiled_theme.json`,
+      artifactDir: `${k_paths.webGenSrcDir}/tailwind`,
+      artifactFile: `${k_paths.webGenSrcDir}/tailwind/compiled_theme.json`,
     },
   },
   ctags: {

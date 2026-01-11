@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.base",
+
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.web.json" }
+  ],
+
+  "include": ["../../../test/unnamed_project_web/**/*"],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "lib": ["esnext", "dom"],
+    "types": ["node", "react", "react-dom"],
+    "jsx": "react-jsx",
+
+    "rootDir": "../../../test",
+    "outDir": "../../../_build/dev/web-test",
+    "declarationDir": "../../../_build/dev/web-test"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base",
+
+  "include": [
+    "../../../../src/unnamed_project/**/*.ts",
+    "../../../../scripts/common/**/*.ts",
+    "../../../../scripts/cli/**/*.ts"
+  ],
+
+  "compilerOptions": {
+    "composite": true,
+
+    "lib": ["esnext"],
+    "types": ["node"],
+    "target": "es2022",
+    "module": "es2022",
+
+    "rootDir": "../../../..",
+    "outDir": "../../../../_build/dev/scripts/cli",
+    "declarationDir": "../../../../_build/dev/scripts/cli",
+
+    "strict": true
+  }
+}

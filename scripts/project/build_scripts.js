@@ -18,10 +18,10 @@ const k_entryPoints = [
  * @see https://esbuild.github.io/api/#build
  */
 const k_buildContextOptions = {
-  tsconfig: "config/ts/targets/tsconfig.scripts.json",
+  tsconfig: "config/ts/targets/scripts/tsconfig.project.json",
   entryPoints: k_entryPoints,
   bundle: true,
-  outdir: "build-dev/scripts/project",
+  outdir: "_build/dev/scripts/project",
   format: "cjs",
   outExtension: { ".js": ".cjs" },
   sourcemap: true,

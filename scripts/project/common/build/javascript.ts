@@ -3,8 +3,8 @@ import { build, type BuildOptions } from "esbuild";
 import { k_paths } from "@/scripts/common/paths";
 
 const k_entryPoints: string[] = [
-  `${k_paths.srcDir}/app.tsx`,
-  `${k_paths.srcDir}/workers/tasks/worker.ts`,
+  `${k_paths.webSrcDir}/app.tsx`,
+  `${k_paths.webSrcDir}/workers/tasks/worker.ts`,
 ];
 
 /**
@@ -13,10 +13,10 @@ const k_entryPoints: string[] = [
  * @see https://esbuild.github.io/api/#build
  */
 export const k_buildContextOptions: BuildOptions = {
-  tsconfig: "config/ts/targets/tsconfig.app.json",
+  tsconfig: `${k_paths.configDir}/ts/targets/tsconfig.web.json`,
   entryPoints: k_entryPoints,
   bundle: true,
-  outdir: "dist",
+  outdir: k_paths.distDir,
   format: "esm",
   target: "es2020",
   platform: "browser",

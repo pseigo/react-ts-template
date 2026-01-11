@@ -32,6 +32,11 @@ To start the development server:
 Now you can visit [`localhost:7878`](http://localhost:7878) from your browser.
 
 
+## Contributing
+
+See [`docs/internal/contributing.md`](./docs/internal/contributing.md).
+
+
 ## License
 
 All files and documentation without an explicit license identifier in the

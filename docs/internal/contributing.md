@@ -7,6 +7,7 @@ Information to help you get started with making contributions to this codebase.
 - `npm run build`
 - `npm run clean`
 - `npm run dev-server`
+- `npm run test`
 
 ## Directory structure
 

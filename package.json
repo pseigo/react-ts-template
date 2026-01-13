@@ -39,9 +39,9 @@
     "dev-server": "npm run build && npm run all -- --parallel watch dev-server-express",
     "dev-server-express": "node _build/dev/scripts/project/dev_server.cjs",
     "dev-server-python": "env python3 -m http.server --directory _dist 7878",
-    "check": "npm run all -- --sequential check:app check:scripts lint format-check",
+    "check": "npm run all -- --sequential check-only:app check-only:test check-only:scripts lint format-check",
     "check-only:app": "npm run _check-only:do -- lint-only:app type-check-only:app",
-    "check-only:test": "npm run _check-only:do -- lint-only:test type-check-only:test",
+    "check-only:test": "npm run _check-only:do -- lint-only:test type-check-only:app:test type-check-only:web:test",
     "check-only:scripts": "npm run _check-only:do -- lint-only:scripts type-check-only:scripts",
     "_check-only:do": "npm run all -- --sequential --continue-on-error",
     "lint": "npx eslint --config config/eslint.config.js",
@@ -82,9 +82,14 @@
     "ctags:regen-all": "./scripts/project/ctags/gen.sh --all",
     "ctags:regen-deps": "./scripts/project/ctags/gen.sh --deps",
     "ctags:regen-project": "./scripts/project/ctags/gen.sh --project",
+    "prepare": "npm run clean && npm run build",
+    "prepublishOnly": "npm run check && npm run test",
+    "package": "zip -r _build/dist.zip _dist",
+    "build-release": "npm run all -- clean build package",
+    "release": "npm run all -- build-release prepublishOnly && echo 'TODO: Implement release script'",
     "rename": "npm run build:scripts && node _build/dev/scripts/project/rename.cjs",
-    "all": "npx npm-run-all --npm-path npm",
-    "scripts:cli:sandbox": "node _build/dev/scripts/cli/sandbox.cjs"
+    "scripts:cli:sandbox": "node _build/dev/scripts/cli/sandbox.cjs",
+    "all": "npx npm-run-all --npm-path npm"
   },
   "dependencies": {
     "clsx": "2.1.1",

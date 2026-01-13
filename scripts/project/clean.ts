@@ -43,9 +43,11 @@ clean(); // <~~ Entry point
 
 function clean() {
   const pathsToDelete: string[] = filterInvalidPaths([
+    "tags",
     "_build/dev",
     "_build/config",
-    "config/ts/targets/tsconfig.app.tsbuildinfo",
+    "_build/dist.zip",
+    "_dist",
   ]);
   cleanPaths(pathsToDelete);
 }

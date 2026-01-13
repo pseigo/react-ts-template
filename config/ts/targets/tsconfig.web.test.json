@@ -6,7 +6,10 @@
     { "path": "./tsconfig.web.json" }
   ],
 
-  "include": ["../../../test/unnamed_project_web/**/*"],
+  "include": [
+    "../../../test/unnamed_project_web/**/*.js",
+    "../../../test/unnamed_project_web/**/*.ts"
+  ],
 
   "compilerOptions": {
     "composite": true,

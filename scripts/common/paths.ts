@@ -10,7 +10,9 @@ export const k_paths = {
   rootLayoutDir: "src/unnamed_project_web/layouts/root",
 
   buildDir: "_build",
+  intermediateBuildDir: "_build/_intermediate",
   distDir: "_dist",
+  appGenSrcDir: "src/unnamed_project/_gen",
   webGenSrcDir: "src/unnamed_project_web/gen",
 
   configDir: "config",

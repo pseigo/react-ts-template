@@ -3,7 +3,11 @@
 
   "references": [{ "path": "./tsconfig.app.json" }],
 
-  "include": ["../../../src/unnamed_project_web/workers/**/*"],
+  "include": [
+    "../../../src/unnamed_project_web/workers/_impl/**/*.js",
+    "../../../src/unnamed_project_web/workers/_impl/**/*.ts",
+    "../../../src/unnamed_project_web/workers/_api/**/*.ts"
+  ],
 
   "compilerOptions": {
     "composite": true,

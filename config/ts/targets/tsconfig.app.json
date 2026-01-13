@@ -3,7 +3,8 @@
 
   "include": [
     "../../../src/unnamed_project/**/*.ts",
-    "../../../src/unnamed_project/**/*.js"
+    "../../../src/unnamed_project/**/*.js",
+    "../../../src/unnamed_project/**/*.json"
   ],
 
   "compilerOptions": {

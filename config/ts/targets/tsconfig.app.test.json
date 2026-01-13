@@ -3,7 +3,10 @@
 
   "references": [{ "path": "./tsconfig.app.json" }],
 
-  "include": ["../../../test/unnamed_project/**/*"],
+  "include": [
+    "../../../test/unnamed_project/**/*.js",
+    "../../../test/unnamed_project/**/*.ts"
+  ],
 
   "compilerOptions": {
     "composite": true,

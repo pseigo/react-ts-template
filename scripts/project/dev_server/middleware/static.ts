@@ -6,13 +6,10 @@ import { k_paths } from "@/scripts/common/paths";
 import * as Telemetry from "../telemetry";
 
 const k_staticPaths = [
-  // TODO: move to `_dist/assets`?
   "app.js",
+  "workers",
   "global.css",
-
-  "fonts",
-  "images",
-  "public",
+  "static"
 ];
 
 export function useStatic(app: Express) {

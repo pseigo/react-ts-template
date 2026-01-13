@@ -24,6 +24,9 @@ const liveReloadScript = `
 </script>
 `;
 
+// Hardcoded option.
+const useLiveReload: boolean = false;
+
 export function useRouter(server: Server, app: Express) {
   const wss = new WebSocketServer({ server });
 
@@ -49,16 +52,24 @@ export function useRouter(server: Server, app: Express) {
     });
   });
 
-  // Watch for artifact file changes.
-  fs.watch(k_paths.distDir, { recursive: true }, (eventType, filename) => {
-    if (filename) {
-      logger.info(`File changed: '${filename}' ('${eventType}')`);
+  if (useLiveReload) {
+    // TODO: Only watch relevant files. Something's triggering this with vscode open...
 
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send("reload");
+    // Watch for artifact file changes.
+    fs.watch(k_paths.distDir, { recursive: true }, (eventType, filename) => {
+      if (filename) {
+        if (![".ts", ".js", ".tsx", ".jsx", ".html", ".css"].some((ext) => filename.endsWith(ext))) {
+          return;
         }
-      });
-    }
-  });
+
+        logger.info(`File changed: '${filename}' ('${eventType}')`);
+
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send("reload");
+          }
+        });
+      }
+    });
+  }
 }

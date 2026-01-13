@@ -37,7 +37,7 @@
   font-style: normal;
   font-weight: 300 600;
   font-display: block;
-  src: url(assets/fonts/material_symbols_outlined.woff2) format("woff2");
+  src: url(static/fonts/material_symbols_outlined.woff2) format("woff2");
 }
 
 .material-symbols-outlined {

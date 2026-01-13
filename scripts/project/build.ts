@@ -1,6 +1,6 @@
 import * as esbuild from "esbuild";
-import FS from "node:fs";
-import { basename } from "node:path";
+import * as FS from "node:fs";
+import * as Path from "node:path";
 
 import { k_appName, k_scriptExtension } from "@/scripts/common/constants";
 import { Logger } from "@/scripts/common/logging";
@@ -19,15 +19,36 @@ import { k_watchConfigSchema } from "./config/watch";
 
 const logger = new Logger({
   app: k_appName,
-  file: basename(__filename, k_scriptExtension),
+  file: Path.basename(__filename, k_scriptExtension),
   //level: LogLevel.DEBUG,
 });
 
 // TODO: watch static assets
 async function deployStaticAssets() {
-  FS.cpSync(k_paths.assetsDir, `${k_paths.distDir}/assets/`, {
-    recursive: true,
-  });
+  // TODO: recursively merge assets dirs, allowing later dirs to overwrite.
+
+  const assetsDirs: string[] = [
+    k_paths.assetsDir,
+    `${k_paths.intermediateBuildDir}/assets`
+  ];
+
+  for (const assetsDir of assetsDirs) {
+    if (!FS.existsSync(assetsDir) || !FS.statSync(assetsDir).isDirectory()) {
+      continue;
+    }
+
+    const entries = FS.readdirSync(assetsDir);
+    for (const entry of entries) {
+      FS.cpSync(
+        Path.join(assetsDir, entry),
+        Path.join(k_paths.distDir, entry),
+        {
+          recursive: true,
+          force: true
+        }
+      );
+    }
+  }
 }
 
 /**

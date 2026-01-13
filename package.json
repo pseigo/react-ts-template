@@ -26,7 +26,7 @@
     "README.md",
     "_dist"
   ],
-    "scripts": {
+  "scripts": {
     "build": "npm run all -- build:dist build:types ctags:regen-project",
     "build:dist": "npm run build:scripts && node _build/dev/scripts/project/build.cjs && npm run type-check-only:app",
     "build:scripts": "npm run all -- type-check-only:scripts:* && node scripts/project/build_scripts.js && node scripts/cli/build_scripts.js",
@@ -39,8 +39,8 @@
     "dev-server": "npm run build && npm run all -- --parallel watch dev-server-express",
     "dev-server-express": "node _build/dev/scripts/project/dev_server.cjs",
     "dev-server-python": "env python3 -m http.server --directory _dist 7878",
-    "check": "npm run all -- --sequential check:src check:scripts lint format-check",
-    "check-only:app": "npm run _check-only:do -- lint-only:src type-check-only:src",
+    "check": "npm run all -- --sequential check:app check:scripts lint format-check",
+    "check-only:app": "npm run _check-only:do -- lint-only:app type-check-only:app",
     "check-only:test": "npm run _check-only:do -- lint-only:test type-check-only:test",
     "check-only:scripts": "npm run _check-only:do -- lint-only:scripts type-check-only:scripts",
     "_check-only:do": "npm run all -- --sequential --continue-on-error",

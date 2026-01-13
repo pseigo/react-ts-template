@@ -52,7 +52,7 @@ const config = {
       lineHeight: ({ theme }) => ({ ...theme("spacing") }),
       colors: {
         brand: "#005cfc",
-      }
+      },
     },
   },
   plugins: [

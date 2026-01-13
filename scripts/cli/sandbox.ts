@@ -32,7 +32,10 @@ const logger = new Logger({
 
 export async function main() {
   // ~~~ Setup. ~~~
-  const input: ReadlineInterface = createReadlineInterface({ input: stdin, output: stdout });
+  const input: ReadlineInterface = createReadlineInterface({
+    input: stdin,
+    output: stdout,
+  });
 
   console.log("~ Sandbox ~");
   console.log("===========");

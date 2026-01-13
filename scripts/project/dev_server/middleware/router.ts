@@ -58,7 +58,11 @@ export function useRouter(server: Server, app: Express) {
     // Watch for artifact file changes.
     fs.watch(k_paths.distDir, { recursive: true }, (eventType, filename) => {
       if (filename) {
-        if (![".ts", ".js", ".tsx", ".jsx", ".html", ".css"].some((ext) => filename.endsWith(ext))) {
+        if (
+          ![".ts", ".js", ".tsx", ".jsx", ".html", ".css"].some((ext) =>
+            filename.endsWith(ext)
+          )
+        ) {
           return;
         }
 

@@ -21,7 +21,7 @@ export type LinkBackground = "light" | "dark" | "auto" | "auto_invert";
 export interface InternalLinkProps {
   children: React.ReactNode;
 
-  href: string,
+  href: string;
 
   /**
    * Opens in a new tab or window (depending on *  the user's browser settings)
@@ -75,7 +75,7 @@ export function InternalLink(props: InternalLinkProps) {
 export interface ExternalLinkProps {
   children: React.ReactNode;
 
-  href: string,
+  href: string;
 
   /**
    * Opens in a new tab or window (depending on *  the user's browser settings)

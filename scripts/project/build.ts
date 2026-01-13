@@ -29,7 +29,7 @@ async function deployStaticAssets() {
 
   const assetsDirs: string[] = [
     k_paths.assetsDir,
-    `${k_paths.intermediateBuildDir}/assets`
+    `${k_paths.intermediateBuildDir}/assets`,
   ];
 
   for (const assetsDir of assetsDirs) {
@@ -44,7 +44,7 @@ async function deployStaticAssets() {
         Path.join(k_paths.distDir, entry),
         {
           recursive: true,
-          force: true
+          force: true,
         }
       );
     }

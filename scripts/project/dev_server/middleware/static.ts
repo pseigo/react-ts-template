@@ -5,12 +5,7 @@ import { k_paths } from "@/scripts/common/paths";
 
 import * as Telemetry from "../telemetry";
 
-const k_staticPaths = [
-  "app.js",
-  "workers",
-  "global.css",
-  "static"
-];
+const k_staticPaths = ["app.js", "workers", "global.css", "static"];
 
 export function useStatic(app: Express) {
   app.use((req, res, next) => {

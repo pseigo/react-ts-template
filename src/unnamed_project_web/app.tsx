@@ -25,7 +25,9 @@ function App() {
 function init() {
   const rootElement = document.getElementById("app");
   if (rootElement == null) {
-    throw new Error("failed to initialize app: root element not found in document");
+    throw new Error(
+      "failed to initialize app: root element not found in document"
+    );
   }
   const root: Root = createRoot(rootElement);
   root.render(

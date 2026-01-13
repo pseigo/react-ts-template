@@ -1,7 +1,9 @@
 const { readFileSync } = require("node:fs");
 
 const k_swcrcFilePath = `${__dirname}/.swcrc`;
-const k_swcOpts = JSON.parse(readFileSync(k_swcrcFilePath, { encoding: "utf-8" }));
+const k_swcOpts = JSON.parse(
+  readFileSync(k_swcrcFilePath, { encoding: "utf-8" })
+);
 
 /** @type {import("jest").Config} */
 const config = {
